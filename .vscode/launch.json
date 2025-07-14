@@ -1,0 +1,57 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        
+        {
+            "name": "Python Debugger: Get Trunks",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal",
+            "python": "/home/liufeng/miniconda3/envs/ragflow/bin/python",
+            "env": {
+                "CONDA_DEFAULT_ENV": "ragflow",
+                "CONDA_PREFIX": "/home/liufeng/miniconda3/envs/ragflow",
+                "CONDA_PREFIX_1": "/home/liufeng/miniconda3",
+                "CONDA_PYTHON_EXE": "/home/liufeng/miniconda3/bin/python",
+                "CONDA_EXE": "/home/liufeng/miniconda3/bin/conda"
+            },
+            "justMyCode": false,
+            "debugStdLib": true,
+            "pathMappings": [
+                {
+                    "localRoot": "/home/liufeng/miniconda3/envs/ragflow/lib/python3.11/site-packages",
+                    "remoteRoot": "/home/liufeng/miniconda3/envs/ragflow/lib/python3.11/site-packages"
+                }
+            ]
+        },
+        {
+            "name": "Debug Process Chunks JSON",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/process_chunks_json.py",
+            "console": "integratedTerminal",
+            "python": "/home/liufeng/miniconda3/envs/ragflow/bin/python",
+            "env": {
+                "CONDA_DEFAULT_ENV": "ragflow",
+                "CONDA_PREFIX": "/home/liufeng/miniconda3/envs/ragflow",
+                "CONDA_PREFIX_1": "/home/liufeng/miniconda3",
+                "CONDA_PYTHON_EXE": "/home/liufeng/miniconda3/bin/python",
+                "CONDA_EXE": "/home/liufeng/miniconda3/bin/conda"
+            },
+            "justMyCode": false,
+            "debugStdLib": true,
+            "pathMappings": [
+                {
+                    "localRoot": "/home/liufeng/miniconda3/envs/ragflow/lib/python3.11/site-packages",
+                    "remoteRoot": "/home/liufeng/miniconda3/envs/ragflow/lib/python3.11/site-packages"
+                }
+            ],
+            "cwd": "${workspaceFolder}",
+            "args": []
+        }
+    ]
+}

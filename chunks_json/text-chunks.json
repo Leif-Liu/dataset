@@ -1,0 +1,218 @@
+[
+  {
+    "name": "API-Description-for-Generating-Python-Scriptmd_chunk_1-part-1",
+    "projectId": "Tvd5amfkRU57",
+    "fileName": "API-Description-for-Generating-Python-Scriptmd_chunk_1.md",
+    "content": "# Chunk 1\n**文档名称:** API-Description-for-Generating-Python-Script.md\n\n**Chunk ID:** 37c395a67936fb9b\n\n**重要关键词:** DiagnosticSessionControl,  normal session,  ASAM ODX file version,  extended session,  fail function,  user-defined error code,  user-defined error message\n\n---\n\n<ul>\n<li><code>switch_to_default_session</code>             | api for DiagnosticSessionControl to normal session</li>\n<li><code>read_odx_file_version</code>                 | api for Read the ASAM ODX file version</li>\n<li><code>switch_to_extend_session</code>              | api for DiagnosticSessionControl to extended session</li>\n<li><code>helpers.fail(\"Version is incorrect\")</code>  | api for Version is incorrect    The fail function is used to fail the case with user-defined error code and user-defined error message. for example: helpers.fail(\"Version is incorrect\")</li>\n</ul>",
+    "summary": "Chunk 1",
+    "size": 861
+  },
+  {
+    "name": "API-Description-for-Generating-Python-Scriptmd_chunk_2-part-1",
+    "projectId": "Tvd5amfkRU57",
+    "fileName": "API-Description-for-Generating-Python-Scriptmd_chunk_2.md",
+    "content": "# Chunk 2\n**文档名称:** API-Description-for-Generating-Python-Script.md\n\n**Chunk ID:** a6c860e20f5c7caa\n\n---\n\n**Summary:**  \nThe `cats_porsche.porsche_lib` Python package includes APIs for diagnostic scripting:  \n1. `switch_to_default_session`: Sets DiagnosticSessionControl to normal session.  \n2. `read_odx_file_version`: Reads the ASAM ODX file version.  \n3. `switch_to_extend_session`: Sets DiagnosticSessionControl to extended session.  \n4. `helpers.fail(\"Version is incorrect\")`: Fails a test case with a custom error message (example provided).  \n\nNo additional details or numbers are included beyond the explicitly listed APIs and their described purposes.",
+    "summary": "Chunk 2",
+    "size": 660
+  },
+  {
+    "name": "API-Description-for-Generating-Python-Scriptmd_chunk_3-part-1",
+    "projectId": "Tvd5amfkRU57",
+    "fileName": "API-Description-for-Generating-Python-Scriptmd_chunk_3.md",
+    "content": "# Chunk 3\n**文档名称:** API-Description-for-Generating-Python-Script.md\n\n**Chunk ID:** 7c380ad2f2bc26ee\n\n**重要关键词:** cats_porsche.porsche_lib\n\n---\n\n# API Description for Generating Python Script\n## Package\r`cats_porsche.porsche_lib` | python package for Porsche script.\r\r## APIs\n\n## Package\n## APIs\n\n## APIs\n",
+    "summary": "Chunk 3",
+    "size": 303
+  },
+  {
+    "name": "PAGIC-6706-1-newmd_chunk_1-part-1",
+    "projectId": "Tvd5amfkRU57",
+    "fileName": "PAGIC-6706-1-newmd_chunk_1.md",
+    "content": "**文档名称:** PAGIC-6706-1-new.md\n\n**Chunk ID:** bfb9ccb483f6dc1d\n\n---\n\n**Summary of Requirement Document: Dual Speedometer Configuration and Display Functionality**\n\n**Document Information**\n- **Owner**: PAG Instrument Cluster Team\n- **Supplier**: Alten\n- **Effective Date**: April 15, 2025\n- **Status**: Released\n\n**Purpose**\nThis document specifies functional requirements for implementing dual speedometer display functionality in a vehicle's Instrument Cluster (IC) within the In-Vehicle Infotainment (IVI) system. The system must support configuration through diagnostic messages and display both kilometers per hour (km/h) and miles per hour (mph) simultaneously based on external speed data inputs.\n\n**Functional Requirements**\n1. **Dual Speedometer Activation (REQ-ID-001)**: The system must be activated using a UDS diagnostic message.\n2. **First Speed Unit Configuration (REQ-ID-002)**: The system must allow configuration of the primary speed unit (km/h) via a service message.\n3. **Secondary Unit Configuration (REQ-ID-003)**: The system must support configuration of the secondary speed unit (mph) via a service message.\n4. **Speed Data Input Handling (REQ-ID-004)**: The system must process speed data from external sources (e.g., ETH/SOME/IP messages) and update displayed values accordingly.\n5. **Dual Display Output (REQ-ID-005)**: The system must display both the primary (km/h) and secondary (mph) speed values simultaneously in designated areas of the Human-Machine Interface (HMI).\n6. **Power State Management (REQ-ID-006)**: The system must enable the instrument cluster HMI when power is applied (KL15=1) and disable it when power is removed (KL15=0).\n\n**Test Conditions**\n- **Environment**: RBS Sparks Simulation environment\n- **Vehicle Projects**: 983, H2, E4\n- **Protocols**: UDS, ETH/SOME/IP",
+    "summary": "Chunk 1 - Part 1/2",
+    "size": 1815
+  },
+  {
+    "name": "PAGIC-6706-1-newmd_chunk_1-part-2",
+    "projectId": "Tvd5amfkRU57",
+    "fileName": "PAGIC-6706-1-newmd_chunk_1.md",
+    "content": "**Compliance and Standards**\n- ISO 14229 (Unified Diagnostic Services)\n- Automotive SPICE (ASPICE) for software development processes\n- Internal technical requirements: KI_AF_GA_100 (linked to Confluence documentation)",
+    "summary": "Chunk 1 - Part 2/2",
+    "size": 218
+  },
+  {
+    "name": "PAGIC-6706-1-newmd_chunk_2-part-1",
+    "projectId": "Tvd5amfkRU57",
+    "fileName": "PAGIC-6706-1-newmd_chunk_2.md",
+    "content": "**文档名称:** PAGIC-6706-1-new.md\n\n**Chunk ID:** 397c7a407c7fd771\n\n**重要关键词:** Dual Speedometer Configuration, Display Functionality, In-Vehicle Infotainment (IVI) system, Instrument Cluster (IC), UDS diagnostic message, ETH/SOME/IP message, km/h, mph, HMI display, power state management, RBS Sparks Simulation environment, ISO 14229, Automotive SPICE, KI_AF_GA_100\n\n---",
+    "summary": "Chunk 2",
+    "size": 366
+  },
+  {
+    "name": "PAGIC-6706-1-newmd_chunk_2-part-2",
+    "projectId": "Tvd5amfkRU57",
+    "fileName": "PAGIC-6706-1-newmd_chunk_2.md",
+    "content": "# Requirement Document: Dual Speedometer Configuration and Display Functionality\n## **1. Introduction**  \rThis document defines the functional requirements for configuring and validating the dual speedometer display functionality in the Instrument Cluster (IC) of a vehicle's In-Vehicle Infotainment (IVI) system. The system must support configuration via diagnostic messages and respond to external speed data inputs to display both kilometers per hour (km/h) and miles per hour (mph) values simultaneously.\r\r---\r\r## **2. Functional Requirements**\r\r### **2.1 Dual Speedometer Activation**  \r- **REQ-ID-001**: The IVI system shall allow activation of the dual speedometer feature using a UDS diagnostic message.  \r\r### **2.2 First Speed Unit Configuration**  \r- **REQ-ID-002**: The The system shall support configuration of the first speed unit (km/h) via a service message.  \r\r### **2.3 Secondary Unit Configuration**  \r- **REQ-ID-003**: The system shall support configuration of the secondary speed unit (mph) via a service message.  \r\r### **2.4 Speed Data Input Handling**  \r- **REQ-ID-004**: The system shall process incoming speed data from an external source (e.g., ETH/SOME/IP message) and update the displayed values accordingly.  \r\r### **2.5 Dual Display Output**  \r- **REQ-ID-005**: The system shall display both the primary speed value (km/h) and the secondary converted value (mph) simultaneously in designated areas of the HMI.  \r\r### **2.6 Power State Management**  \r- **REQ-ID-006**: The system shall enable the instrument cluster HMI when power is applied (KL15=1) and disable it when power is removed (KL15=0).  \r\r---\r\r## **4. Test Conditions**  \r- **Test Environment**:  \r  - RBS Sparks Simulation environment.  \r  - Vehicle projects: 983, H2, E4.  \r  - Protocols: UDS, ETH/SOME/IP.  \r\r---\r\r## **5. Compliance, Standards and References**  \r- ISO 14229: Road vehicles — Unified diagnostic services (UDS).  \r- Automotive SPICE (ASPICE) for software development processes.  \r- Internal technical requirements: KI_AF_GA_100 (linked to Confluence documentation).",
+    "summary": "Requirement Document: Dual Speedometer Configuration and Display Functionality",
+    "size": 2075
+  },
+  {
+    "name": "PAGIC-6706-1-newmd_chunk_2-part-3",
+    "projectId": "Tvd5amfkRU57",
+    "fileName": "PAGIC-6706-1-newmd_chunk_2.md",
+    "content": "## **1. Introduction**\n## **2. Functional Requirements**\r\r### **2.1 Dual Speedometer Activation**  \r- **REQ-ID-001**: The IVI system shall allow activation of the dual speedometer feature using a UDS diagnostic message.  \r\r### **2.2 First Speed Unit Configuration**  \r- **REQ-ID-002**: The The system shall support configuration of the first speed unit (km/h) via a service message.  \r\r### **2.3 Secondary Unit Configuration**  \r- **REQ-ID-003**: The system shall support configuration of the secondary speed unit (mph) via a service message.  \r\r### **2.4 Speed Data Input Handling**  \r- **REQ-ID-004**: The system shall process incoming speed data from an external source (e.g., ETH/SOME/IP message) and update the displayed values accordingly.  \r\r### **2.5 Dual Display Output**  \r- **REQ-ID-005**: The system shall display both the primary speed value (km/h) and the secondary converted value (mph) simultaneously in designated areas of the HMI.  \r\r### **2.6 Power State Management**  \r- **REQ-ID-006**: The system shall enable the instrument cluster HMI when power is applied (KL15=1) and disable it when power is removed (KL15=0).  \r\r---\r\r## **4. Test Conditions**  \r- **Test Environment**:  \r  - RBS Sparks Simulation environment.  \r  - Vehicle projects: 983, H2, E4.  \r  - Protocols: UDS, ETH/SOME/IP.  \r\r---\r\r## **5. Compliance, Standards and References**  \r- ISO 14229: Road vehicles — Unified diagnostic services (UDS).  \r- Automotive SPICE (ASPICE) for software development processes.  \r- Internal technical requirements: KI_AF_GA_100 (linked to Confluence documentation).",
+    "summary": "Requirement Document: Dual Speedometer Configuration and Display Functionality > **1. Introduction**",
+    "size": 1583
+  },
+  {
+    "name": "PAGIC-6706-1-newmd_chunk_2-part-4",
+    "projectId": "Tvd5amfkRU57",
+    "fileName": "PAGIC-6706-1-newmd_chunk_2.md",
+    "content": "## **2. Functional Requirements**\n### **2.1 Dual Speedometer Activation**  \r- **REQ-ID-001**: The IVI system shall allow activation of the dual speedometer feature using a UDS diagnostic message.  \r\r### **2.2 First Speed Unit Configuration**  \r- **REQ-ID-002**: The The system shall support configuration of the first speed unit (km/h) via a service message.  \r\r### **2.3 Secondary Unit Configuration**  \r- **REQ-ID-003**: The system shall support configuration of the secondary speed unit (mph) via a service message.  \r\r### **2.4 Speed Data Input Handling**  \r- **REQ-ID-004**: The system shall process incoming speed data from an external source (e.g., ETH/SOME/IP message) and update the displayed values accordingly.  \r\r### **2.5 Dual Display Output**  \r- **REQ-ID-005**: The system shall display both the primary speed value (km/h) and the secondary converted value (mph) simultaneously in designated areas of the HMI.  \r\r### **2.6 Power State Management**  \r- **REQ-ID-006**: The system shall enable the instrument cluster HMI when power is applied (KL15=1) and disable it when power is removed (KL15=0).  \r\r---\r\r## **4. Test Conditions**  \r- **Test Environment**:  \r  - RBS Sparks Simulation environment.  \r  - Vehicle projects: 983, H2, E4.  \r  - Protocols: UDS, ETH/SOME/IP.  \r\r---\r\r## **5. Compliance, Standards and References**  \r- ISO 14229: Road vehicles — Unified diagnostic services (UDS).  \r- Automotive SPICE (ASPICE) for software development processes.  \r- Internal technical requirements: KI_AF_GA_100 (linked to Confluence documentation).",
+    "summary": "Requirement Document: Dual Speedometer Configuration and Display Functionality > **2. Functional Requirements**",
+    "size": 1559
+  },
+  {
+    "name": "PAGIC-6706-1-newmd_chunk_2-part-5",
+    "projectId": "Tvd5amfkRU57",
+    "fileName": "PAGIC-6706-1-newmd_chunk_2.md",
+    "content": "### **2.2 First Speed Unit Configuration**  \r- **REQ-ID-002**: The The system shall support configuration of the first speed unit (km/h) via a service message.  \r\r### **2.3 Secondary Unit Configuration**  \r- **REQ-ID-003**: The system shall support configuration of the secondary speed unit (mph) via a service message.  \r\r### **2.4 Speed Data Input Handling**  \r- **REQ-ID-004**: The system shall process incoming speed data from an external source (e.g., ETH/SOME/IP message) and update the displayed values accordingly.  \r\r### **2.5 Dual Display Output**  \r- **REQ-ID-005**: The system shall display both the primary speed value (km/h) and the secondary converted value (mph) simultaneously in designated areas of the HMI.  \r\r### **2.6 Power State Management**  \r- **REQ-ID-006**: The system shall enable the instrument cluster HMI when power is applied (KL15=1) and disable it when power is removed (KL15=0).  \r\r---\r\r## **4. Test Conditions**  \r- **Test Environment**:  \r  - RBS Sparks Simulation environment.  \r  - Vehicle projects: 983, H2, E4.  \r  - Protocols: UDS, ETH/SOME/IP.  \r\r---\r\r## **5. Compliance, Standards and References**  \r- ISO 14229: Road vehicles — Unified diagnostic services (UDS).  \r- Automotive SPICE (ASPICE) for software development processes.  \r- Internal technical requirements: KI_AF_GA_100 (linked to Confluence documentation).",
+    "summary": "Requirement Document: Dual Speedometer Configuration and Display Functionality > [**2. Functional Requirements** > **2.1 Dual Speedometer Activation**, **2. Functional Requirements** > **2.2 First Speed Unit Configuration**] - Part 1/2",
+    "size": 1360
+  },
+  {
+    "name": "PAGIC-6706-1-newmd_chunk_2-part-6",
+    "projectId": "Tvd5amfkRU57",
+    "fileName": "PAGIC-6706-1-newmd_chunk_2.md",
+    "content": "### **2.2 First Speed Unit Configuration**\n### **2.3 Secondary Unit Configuration**  \r- **REQ-ID-003**: The system shall support configuration of the secondary speed unit (mph) via a service message.  \r\r### **2.4 Speed Data Input Handling**  \r- **REQ-ID-004**: The system shall process incoming speed data from an external source (e.g., ETH/SOME/IP message) and update the displayed values accordingly.  \r\r### **2.5 Dual Display Output**  \r- **REQ-ID-005**: The system shall display both the primary speed value (km/h) and the secondary converted value (mph) simultaneously in designated areas of the HMI.  \r\r### **2.6 Power State Management**  \r- **REQ-ID-006**: The system shall enable the instrument cluster HMI when power is applied (KL15=1) and disable it when power is removed (KL15=0).  \r\r---\r\r## **4. Test Conditions**  \r- **Test Environment**:  \r  - RBS Sparks Simulation environment.  \r  - Vehicle projects: 983, H2, E4.  \r  - Protocols: UDS, ETH/SOME/IP.  \r\r---\r\r## **5. Compliance, Standards and References**  \r- ISO 14229: Road vehicles — Unified diagnostic services (UDS).  \r- Automotive SPICE (ASPICE) for software development processes.  \r- Internal technical requirements: KI_AF_GA_100 (linked to Confluence documentation).",
+    "summary": "Requirement Document: Dual Speedometer Configuration and Display Functionality > [**2. Functional Requirements** > **2.1 Dual Speedometer Activation**, **2. Functional Requirements** > **2.2 First Speed Unit Configuration**] - Part 2/2",
+    "size": 1240
+  },
+  {
+    "name": "PAGIC-6706-1-newmd_chunk_2-part-7",
+    "projectId": "Tvd5amfkRU57",
+    "fileName": "PAGIC-6706-1-newmd_chunk_2.md",
+    "content": "### **2.3 Secondary Unit Configuration**\n### **2.4 Speed Data Input Handling**  \r- **REQ-ID-004**: The system shall process incoming speed data from an external source (e.g., ETH/SOME/IP message) and update the displayed values accordingly.  \r\r### **2.5 Dual Display Output**  \r- **REQ-ID-005**: The system shall display both the primary speed value (km/h) and the secondary converted value (mph) simultaneously in designated areas of the HMI.  \r\r### **2.6 Power State Management**  \r- **REQ-ID-006**: The system shall enable the instrument cluster HMI when power is applied (KL15=1) and disable it when power is removed (KL15=0).  \r\r---\r\r## **4. Test Conditions**  \r- **Test Environment**:  \r  - RBS Sparks Simulation environment.  \r  - Vehicle projects: 983, H2, E4.  \r  - Protocols: UDS, ETH/SOME/IP.  \r\r---\r\r## **5. Compliance, Standards and References**  \r- ISO 14229: Road vehicles — Unified diagnostic services (UDS).  \r- Automotive SPICE (ASPICE) for software development processes.  \r- Internal technical requirements: KI_AF_GA_100 (linked to Confluence documentation).\n\n### **2.4 Speed Data Input Handling**\n### **2.5 Dual Display Output**  \r- **REQ-ID-005**: The system shall display both the primary speed value (km/h) and the secondary converted value (mph) simultaneously in designated areas of the HMI.  \r\r### **2.6 Power State Management**  \r- **REQ-ID-006**: The system shall enable the instrument cluster HMI when power is applied (KL15=1) and disable it when power is removed (KL15=0).  \r\r---\r\r## **4. Test Conditions**  \r- **Test Environment**:  \r  - RBS Sparks Simulation environment.  \r  - Vehicle projects: 983, H2, E4.  \r  - Protocols: UDS, ETH/SOME/IP.  \r\r---\r\r## **5. Compliance, Standards and References**  \r- ISO 14229: Road vehicles — Unified diagnostic services (UDS).  \r- Automotive SPICE (ASPICE) for software development processes.  \r- Internal technical requirements: KI_AF_GA_100 (linked to Confluence documentation).",
+    "summary": "Requirement Document: Dual Speedometer Configuration and Display Functionality > [**2. Functional Requirements** > **2.3 Secondary Unit Configuration**, **2. Functional Requirements** > **2.4 Speed Data Input Handling**]",
+    "size": 1952
+  },
+  {
+    "name": "PAGIC-6706-1-newmd_chunk_2-part-8",
+    "projectId": "Tvd5amfkRU57",
+    "fileName": "PAGIC-6706-1-newmd_chunk_2.md",
+    "content": "### **2.5 Dual Display Output**\n### **2.6 Power State Management**  \r- **REQ-ID-006**: The system shall enable the instrument cluster HMI when power is applied (KL15=1) and disable it when power is removed (KL15=0).  \r\r---\r\r## **4. Test Conditions**  \r- **Test Environment**:  \r  - RBS Sparks Simulation environment.  \r  - Vehicle projects: 983, H2, E4.  \r  - Protocols: UDS, ETH/SOME/IP.  \r\r---\r\r## **5. Compliance, Standards and References**  \r- ISO 14229: Road vehicles — Unified diagnostic services (UDS).  \r- Automotive SPICE (ASPICE) for software development processes.  \r- Internal technical requirements: KI_AF_GA_100 (linked to Confluence documentation).\n\n### **2.6 Power State Management**\n## **4. Test Conditions**  \r- **Test Environment**:  \r  - RBS Sparks Simulation environment.  \r  - Vehicle projects: 983, H2, E4.  \r  - Protocols: UDS, ETH/SOME/IP.  \r\r---\r\r## **5. Compliance, Standards and References**  \r- ISO 14229: Road vehicles — Unified diagnostic services (UDS).  \r- Automotive SPICE (ASPICE) for software development processes.  \r- Internal technical requirements: KI_AF_GA_100 (linked to Confluence documentation).\n\n## **4. Test Conditions**\n## **5. Compliance, Standards and References**  \r- ISO 14229: Road vehicles — Unified diagnostic services (UDS).  \r- Automotive SPICE (ASPICE) for software development processes.  \r- Internal technical requirements: KI_AF_GA_100 (linked to Confluence documentation).\n\n## **5. Compliance, Standards and References**\n",
+    "summary": "Requirement Document: Dual Speedometer Configuration and Display Functionality > **2. Functional Requirements** > **2.5 Dual Display Output**",
+    "size": 1482
+  },
+  {
+    "name": "PAGIC-6706-1-newmd_chunk_3-part-1",
+    "projectId": "Tvd5amfkRU57",
+    "fileName": "PAGIC-6706-1-newmd_chunk_3.md",
+    "content": "# Chunk 3\n**文档名称:** PAGIC-6706-1-new.md\n\n**Chunk ID:** 3f571b1d83351b62\n\n**重要关键词:** PAG Instrument Cluster Team,  Alten,  15.04.2025,  Released\n\n---\n\n\r---\r\r**Document Owner**: PAG Instrument Cluster Team  \r**Supplier Responsibility**: Alten  \r**Effective Date**: 15.04.2025  \r**Status**: Released",
+    "summary": "Chunk 3",
+    "size": 296
+  },
+  {
+    "name": "PAGIC-6706-message-newmd_chunk_1-part-1",
+    "projectId": "Tvd5amfkRU57",
+    "fileName": "PAGIC-6706-message-newmd_chunk_1.md",
+    "content": "# Chunk 1\n**文档名称:** PAGIC-6706-message-new.md\n\n**Chunk ID:** 75fc3f2d6eb9f4c3\n\n---\n\nThe document outlines configurations for dual speedometer settings and display functionality, as detailed in the table below:\n\n1. **Dual Speedometer Regulation Requirements**  \n   - **Message**: `DIAG(DashDoardUDS(0x17).Regulation_requirements.dual_speedometer)`  \n   - **Category**: UDS DIAG  \n   - **Value**: 1  \n\n2. **Primary Speed Unit (km/h)**  \n   - **Message**: `DIAG(DashDoardUDS(0x17).VWCodingValue.speed)`  \n   - **Category**: UDS DIAG  \n   - **Value**: 0  \n\n3. **Secondary Speed Unit (mph)**  \n   - **Message**: `Services(0x600E_UnitMaster::0xC010 units.SpeedUnit)`  \n   - **Category**: Services  \n   - **Value**: 1  \n\n4. **3D Display Value for Dual Speedometer**  \n   - **Message**: `ETH(VLAN_Cockpit::SK_HCP1_04::VDSO_05::VDSO_Vx3dDisp)`  \n   - **Category**: ETH  \n   - **Value**: 36,300  \n\nThis summary reflects the numerical values and configurations specified in the original document for dual speedometer regulation, unit display, and 3D rendering parameters.",
+    "summary": "Chunk 1",
+    "size": 1060
+  },
+  {
+    "name": "PAGIC-6706-message-newmd_chunk_2-part-1",
+    "projectId": "Tvd5amfkRU57",
+    "fileName": "PAGIC-6706-message-newmd_chunk_2.md",
+    "content": "# Chunk 2\n**文档名称:** PAGIC-6706-message-new.md\n\n**Chunk ID:** 21a300879b5d7eb6\n\n**重要关键词:** dual speedometer regulation requirements,  km/h as first unit,  mph as secondary unit,  3D display value\n\n---\n\n<table>\n<thead>\n<tr>\n<th><strong>Message Purpose</strong></th>\n<th><strong>Message Full Name</strong></th>\n<th><strong>Message Category</strong></th>\n<th><strong>Numerical Value</strong></th>\n</tr>\n</thead>\n<tbody>\n<tr>\n<td>Configure the dual speedometer regulation requirements</td>\n<td><code>DIAG(DashDoardUDS(0x17).Regulation_requirements.dual_speedometer)</code></td>\n<td>UDS DIAG</td>\n<td>1</td>\n</tr>\n<tr>\n<td>Configure the system to display km/h as the first unit</td>\n<td><code>DIAG(DashDoardUDS(0x17).VWCodingValue.speed)</code></td>\n<td>UDS DIAG</td>\n<td>0</td>\n</tr>\n<tr>\n<td>Configure the system to display mph as the secondary unit</td>\n<td><code>Services(0x600E_UnitMaster::0xC010 units.SpeedUnit)</code></td>\n<td>Services</td>\n<td>1</td>\n</tr>\n<tr>\n<td>Set 3D display value for dual speedometer</td>\n<td><code>ETH(VLAN_Cockpit::SK_HCP1_04::VDSO_05::VDSO_Vx3dDisp)</code></td>\n<td>ETH</td>\n<td>36300</td>\n</tr>\n</tbody>\n</table>",
+    "summary": "Chunk 2",
+    "size": 1143
+  },
+  {
+    "name": "PAGIC-6706-message-newmd_chunk_3-part-1",
+    "projectId": "Tvd5amfkRU57",
+    "fileName": "PAGIC-6706-message-newmd_chunk_3.md",
+    "content": "# Chunk 3\n**文档名称:** PAGIC-6706-message-new.md\n\n**Chunk ID:** 01871e952225586b\n\n**重要关键词:** Dual Speedometer,  Configuration,  Display Functionality\n\n---\n\n# Message info Document: Dual Speedometer Configuration and Display Functionality\n",
+    "summary": "Chunk 3",
+    "size": 235
+  },
+  {
+    "name": "PAGIC-11827-2md_chunk_1-part-1",
+    "projectId": "Tvd5amfkRU57",
+    "fileName": "PAGIC-11827-2md_chunk_1.md",
+    "content": "**文档名称:** PAGIC-11827-2.md\n\n**Chunk ID:** 8e88971c05931c4c\n\n**重要关键词:** In-Vehicle Infotainment (IVI) system,  Unified Diagnostic Services (UDS),  ASAM ODX file version,  OBDII default diagnostic session,  extended diagnostic session,  Read Data by Identifier,  consistent version information,  RBS Sparks Simulation environment,  UDS diagnostic messages,  SOME/IP network communication protocols,  ISO 14229:2020,  diagnostic configuration database,  manual test execution,  predefined diagnostic session commands,  data identifiers (DIDs)\n\n---",
+    "summary": "Chunk 1",
+    "size": 544
+  },
+  {
+    "name": "PAGIC-11827-2md_chunk_1-part-2",
+    "projectId": "Tvd5amfkRU57",
+    "fileName": "PAGIC-11827-2md_chunk_1.md",
+    "content": "# Requirement Document: IVI Diagnostic Configuration and Version Verification\n## **1. Introduction**  \rThis document defines the functional requirements for configuring an In-Vehicle Infotainment (IVI) system using Unified Diagnostic Services (UDS) and verifying the ASAM ODX file version information through diagnostic and network communication protocols. The requirements ensure the IVI correctly responds to diagnostic session commands and returns expected data identifiers (DIDs).\r\r---\r\r## **2. Functional Requirements**\r\r### **2.1 Diagnostic Session Support**  \r- **REQ-ID-001**: The IVI shall support entering the OBDII default diagnostic session via UDS to enable basic diagnostic operations.  \r- **REQ-ID-002**: The IVI shall support entering an extended diagnostic session via UDS to access advanced diagnostic functions.  \r\r### **2.2 ASAM ODX Version Retrieval**  \r- **REQ-ID-003**: The IVI shall respond to a \"Read Data by Identifier\" UDS request for returning the ASAM ODX file version stored in the system.  \r- **REQ-ID-004**: The returned ASAM ODX file version shall match the version specified in the system's diagnostic configuration database.  \r\r### **2.3 Consistent Version Information**  \r- **REQ-ID-005**: The ASAM ODX file version returned shall remain consistent across both OBDII default and extended diagnostic sessions.  \r\r---\r\r## **4. Test Conditions**  \r- **Test Environment**:  \r  - RBS Sparks Simulation environment for IVI testing.  \r  - UDS diagnostic messages, ETH, and SOME/IP network communication protocols.  \r  - Manual test execution with predefined diagnostic session and data identifier commands.  \r\r---\r\r## **5. Compliance, Standards and References**  \r- ISO 14229:2020 (Unified Diagnostic Services for road vehicles).  \r- ASAM ODX standard for diagnostic description files.  \r- Internal test repository path: `Diagnose/Identifikation`.  \r\r**Document Owner**: PAG Instrument Cluster Team  \r**Supplier Responsibility**: Alten  \r**Effective Date**: 06.12.2024  \r**Status**: Draft",
+    "summary": "Requirement Document: IVI Diagnostic Configuration and Version Verification",
+    "size": 2017
+  },
+  {
+    "name": "PAGIC-11827-2md_chunk_1-part-3",
+    "projectId": "Tvd5amfkRU57",
+    "fileName": "PAGIC-11827-2md_chunk_1.md",
+    "content": "## **1. Introduction**\n## **2. Functional Requirements**\r\r### **2.1 Diagnostic Session Support**  \r- **REQ-ID-001**: The IVI shall support entering the OBDII default diagnostic session via UDS to enable basic diagnostic operations.  \r- **REQ-ID-002**: The IVI shall support entering an extended diagnostic session via UDS to access advanced diagnostic functions.  \r\r### **2.2 ASAM ODX Version Retrieval**  \r- **REQ-ID-003**: The IVI shall respond to a \"Read Data by Identifier\" UDS request for returning the ASAM ODX file version stored in the system.  \r- **REQ-ID-004**: The returned ASAM ODX file version shall match the version specified in the system's diagnostic configuration database.  \r\r### **2.3 Consistent Version Information**  \r- **REQ-ID-005**: The ASAM ODX file version returned shall remain consistent across both OBDII default and extended diagnostic sessions.  \r\r---\r\r## **4. Test Conditions**  \r- **Test Environment**:  \r  - RBS Sparks Simulation environment for IVI testing.  \r  - UDS diagnostic messages, ETH, and SOME/IP network communication protocols.  \r  - Manual test execution with predefined diagnostic session and data identifier commands.  \r\r---\r\r## **5. Compliance, Standards and References**  \r- ISO 14229:2020 (Unified Diagnostic Services for road vehicles).  \r- ASAM ODX standard for diagnostic description files.  \r- Internal test repository path: `Diagnose/Identifikation`.  \r\r**Document Owner**: PAG Instrument Cluster Team  \r**Supplier Responsibility**: Alten  \r**Effective Date**: 06.12.2024  \r**Status**: Draft",
+    "summary": "Requirement Document: IVI Diagnostic Configuration and Version Verification > **1. Introduction**",
+    "size": 1549
+  },
+  {
+    "name": "PAGIC-11827-2md_chunk_1-part-4",
+    "projectId": "Tvd5amfkRU57",
+    "fileName": "PAGIC-11827-2md_chunk_1.md",
+    "content": "### **2.1 Diagnostic Session Support**  \r- **REQ-ID-001**: The IVI shall support entering the OBDII default diagnostic session via UDS to enable basic diagnostic operations.  \r- **REQ-ID-002**: The IVI shall support entering an extended diagnostic session via UDS to access advanced diagnostic functions.  \r\r### **2.2 ASAM ODX Version Retrieval**  \r- **REQ-ID-003**: The IVI shall respond to a \"Read Data by Identifier\" UDS request for returning the ASAM ODX file version stored in the system.  \r- **REQ-ID-004**: The returned ASAM ODX file version shall match the version specified in the system's diagnostic configuration database.  \r\r### **2.3 Consistent Version Information**  \r- **REQ-ID-005**: The ASAM ODX file version returned shall remain consistent across both OBDII default and extended diagnostic sessions.  \r\r---\r\r## **4. Test Conditions**  \r- **Test Environment**:  \r  - RBS Sparks Simulation environment for IVI testing.  \r  - UDS diagnostic messages, ETH, and SOME/IP network communication protocols.  \r  - Manual test execution with predefined diagnostic session and data identifier commands.  \r\r---\r\r## **5. Compliance, Standards and References**  \r- ISO 14229:2020 (Unified Diagnostic Services for road vehicles).  \r- ASAM ODX standard for diagnostic description files.  \r- Internal test repository path: `Diagnose/Identifikation`.  \r\r**Document Owner**: PAG Instrument Cluster Team  \r**Supplier Responsibility**: Alten  \r**Effective Date**: 06.12.2024  \r**Status**: Draft",
+    "summary": "Requirement Document: IVI Diagnostic Configuration and Version Verification > [**2. Functional Requirements**, **2. Functional Requirements** > **2.1 Diagnostic Session Support**] - Part 1/2",
+    "size": 1491
+  },
+  {
+    "name": "PAGIC-11827-2md_chunk_1-part-5",
+    "projectId": "Tvd5amfkRU57",
+    "fileName": "PAGIC-11827-2md_chunk_1.md",
+    "content": "### **2.1 Diagnostic Session Support**\n### **2.2 ASAM ODX Version Retrieval**  \r- **REQ-ID-003**: The IVI shall respond to a \"Read Data by Identifier\" UDS request for returning the ASAM ODX file version stored in the system.  \r- **REQ-ID-004**: The returned ASAM ODX file version shall match the version specified in the system's diagnostic configuration database.  \r\r### **2.3 Consistent Version Information**  \r- **REQ-ID-005**: The ASAM ODX file version returned shall remain consistent across both OBDII default and extended diagnostic sessions.  \r\r---\r\r## **4. Test Conditions**  \r- **Test Environment**:  \r  - RBS Sparks Simulation environment for IVI testing.  \r  - UDS diagnostic messages, ETH, and SOME/IP network communication protocols.  \r  - Manual test execution with predefined diagnostic session and data identifier commands.  \r\r---\r\r## **5. Compliance, Standards and References**  \r- ISO 14229:2020 (Unified Diagnostic Services for road vehicles).  \r- ASAM ODX standard for diagnostic description files.  \r- Internal test repository path: `Diagnose/Identifikation`.  \r\r**Document Owner**: PAG Instrument Cluster Team  \r**Supplier Responsibility**: Alten  \r**Effective Date**: 06.12.2024  \r**Status**: Draft",
+    "summary": "Requirement Document: IVI Diagnostic Configuration and Version Verification > [**2. Functional Requirements**, **2. Functional Requirements** > **2.1 Diagnostic Session Support**] - Part 2/2",
+    "size": 1222
+  },
+  {
+    "name": "PAGIC-11827-2md_chunk_1-part-6",
+    "projectId": "Tvd5amfkRU57",
+    "fileName": "PAGIC-11827-2md_chunk_1.md",
+    "content": "### **2.2 ASAM ODX Version Retrieval**\n### **2.3 Consistent Version Information**  \r- **REQ-ID-005**: The ASAM ODX file version returned shall remain consistent across both OBDII default and extended diagnostic sessions.  \r\r---\r\r## **4. Test Conditions**  \r- **Test Environment**:  \r  - RBS Sparks Simulation environment for IVI testing.  \r  - UDS diagnostic messages, ETH, and SOME/IP network communication protocols.  \r  - Manual test execution with predefined diagnostic session and data identifier commands.  \r\r---\r\r## **5. Compliance, Standards and References**  \r- ISO 14229:2020 (Unified Diagnostic Services for road vehicles).  \r- ASAM ODX standard for diagnostic description files.  \r- Internal test repository path: `Diagnose/Identifikation`.  \r\r**Document Owner**: PAG Instrument Cluster Team  \r**Supplier Responsibility**: Alten  \r**Effective Date**: 06.12.2024  \r**Status**: Draft\n\n### **2.3 Consistent Version Information**\n## **4. Test Conditions**  \r- **Test Environment**:  \r  - RBS Sparks Simulation environment for IVI testing.  \r  - UDS diagnostic messages, ETH, and SOME/IP network communication protocols.  \r  - Manual test execution with predefined diagnostic session and data identifier commands.  \r\r---\r\r## **5. Compliance, Standards and References**  \r- ISO 14229:2020 (Unified Diagnostic Services for road vehicles).  \r- ASAM ODX standard for diagnostic description files.  \r- Internal test repository path: `Diagnose/Identifikation`.  \r\r**Document Owner**: PAG Instrument Cluster Team  \r**Supplier Responsibility**: Alten  \r**Effective Date**: 06.12.2024  \r**Status**: Draft\n\n## **4. Test Conditions**\n## **5. Compliance, Standards and References**  \r- ISO 14229:2020 (Unified Diagnostic Services for road vehicles).  \r- ASAM ODX standard for diagnostic description files.  \r- Internal test repository path: `Diagnose/Identifikation`.  \r\r**Document Owner**: PAG Instrument Cluster Team  \r**Supplier Responsibility**: Alten  \r**Effective Date**: 06.12.2024  \r**Status**: Draft",
+    "summary": "Requirement Document: IVI Diagnostic Configuration and Version Verification > [**4. Test Conditions**, **2. Functional Requirements** > **2.2 ASAM ODX Version Retrieval**, **2. Functional Requirements** > **2.3 Consistent Version Information**]",
+    "size": 2003
+  },
+  {
+    "name": "PAGIC-11827-2md_chunk_1-part-7",
+    "projectId": "Tvd5amfkRU57",
+    "fileName": "PAGIC-11827-2md_chunk_1.md",
+    "content": "## **5. Compliance, Standards and References**\n",
+    "summary": "Requirement Document: IVI Diagnostic Configuration and Version Verification > **5. Compliance, Standards and References**",
+    "size": 47
+  },
+  {
+    "name": "PAGIC-11827-message-2md_chunk_1-part-1",
+    "projectId": "Tvd5amfkRU57",
+    "fileName": "PAGIC-11827-message-2md_chunk_1.md",
+    "content": "# Chunk 1\n**文档名称:** PAGIC-11827-message-2.md\n\n**Chunk ID:** cd8fda974c1c3151\n\n---\n\nThe provided content outlines three diagnostic messages related to UDS (Unified Diagnostic Services) operations:  \n\n1. **Message Purpose**: Set the diagnostic session to OBDII and VW default session using the UDS service `DiagnosticSessionControl`.  \n   - **Message Full Name**: `DIAG(DashboardUDS(0x0017).DiagnSessiContrOBDIIAndVWDefauSessi)`  \n   - **Category**: UDS DIAG  \n\n2. **Message Purpose**: Read the ASAM ODX file version via the UDS service `Read Data By Identifier`.  \n   - **Message Full Name**: `DIAG(DashboardUDS(0x0017).ReadDataByIdentECUIdent.ASAM ODX File Version)`  \n   - **Category**: UDS DIAG  \n\n3. **Message Purpose**: Set the diagnostic session to extended session using the UDS service `DiagnosticSessionControl`.  \n   - **Message Full Name**: Incomplete/cut off in the source (likely `DIAG(DashboardUDS(0x0017).DiagnSessiContrExtenSessi)`).  \n   - **Category**: UDS DIAG  \n\n**Key Notes**:  \n- All messages belong to the **UDS DIAG** category.  \n- The `DashboardUDS(0x0017)` identifier is consistent across entries.  \n- The third message's full name appears truncated in the original table.  \n\nNo additional details or numerical data are provided beyond what is explicitly listed.",
+    "summary": "Chunk 1",
+    "size": 1287
+  },
+  {
+    "name": "PAGIC-11827-message-2md_chunk_2-part-1",
+    "projectId": "Tvd5amfkRU57",
+    "fileName": "PAGIC-11827-message-2md_chunk_2.md",
+    "content": "# Chunk 2\n**文档名称:** PAGIC-11827-message-2.md\n\n**Chunk ID:** 8850ec349adb09fe\n\n**重要关键词:** UDS,  DiagnosticSessionControl,  OBDII,  VW default session,  ASAM ODX File Version,  extended session\n\n---\n\n<table>\n<thead>\n<tr>\n<th><strong>Message Purpose</strong></th>\n<th><strong>Message Full Name</strong></th>\n<th><strong>Message Category</strong></th>\n</tr>\n</thead>\n<tbody>\n<tr>\n<td>Set the diagnostic session to OBDII and VW default session using UDS service <code>DiagnosticSessionControl</code></td>\n<td><code>DIAG(DashboardUDS(0x0017).DiagnSessiContrOBDIIAndVWDefauSessi)</code></td>\n<td>UDS DIAG</td>\n</tr>\n<tr>\n<td>Read the ASAM ODX file version by UDS service <code>Read Data By Identifier</code></td>\n<td><code>DIAG(DashboardUDS(0x0017).ReadDataByIdentECUIdent.ASAM ODX File Version)</code></td>\n<td>UDS DIAG</td>\n</tr>\n<tr>\n<td>Set the diagnostic session to extended session using UDS service <code>DiagnosticSessionControl                                           |</code>DIAG(DashboardUDS(0x0017).DiagnSessiContrExtenSessi)`</td>\n<td>UDS DIAG</td>\n<td></td>\n</tr>\n</tbody>\n</table>",
+    "summary": "Chunk 2",
+    "size": 1090
+  },
+  {
+    "name": "PAGIC-11827-message-2md_chunk_3-part-1",
+    "projectId": "Tvd5amfkRU57",
+    "fileName": "PAGIC-11827-message-2md_chunk_3.md",
+    "content": "# Chunk 3\n**文档名称:** PAGIC-11827-message-2.md\n\n**Chunk ID:** 0909453262a0ce93\n\n**重要关键词:** IVI,  Diagnostic Configuration,  Version Verification\n\n---\n\n# Message info Document: IVI Diagnostic Configuration and Version Verification\n",
+    "summary": "Chunk 3",
+    "size": 228
+  }
+]
