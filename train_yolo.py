@@ -51,7 +51,7 @@ train_results = model.train(
     # === 损失函数权重 ===
     box=7.5,                    # 边界框损失权重
     cls=0.5,                    # 分类损失权重
-    dfl=1.5,                    # DFL损失权重 # 可能在train中不起作用，因为输出84通道没有DFL数据
+    dfl=1.5,                    # DFL损失权重
     
     # === 项目管理 ===
     project='yolo_training',    # 项目目录名称
