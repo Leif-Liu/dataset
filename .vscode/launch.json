@@ -52,6 +52,34 @@
             ],
             "cwd": "${workspaceFolder}",
             "args": []
+        },
+        {
+            "name": "Debug YOLO Training",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/train_yolo.py",
+            "console": "integratedTerminal",
+            "python": "/home/liufeng/miniconda3/envs/yolo/bin/python",
+            "env": {
+                "CONDA_DEFAULT_ENV": "yolo",
+                "CONDA_PREFIX": "/home/liufeng/miniconda3/envs/yolo",
+                "CONDA_PREFIX_1": "/home/liufeng/miniconda3",
+                "CONDA_PYTHON_EXE": "/home/liufeng/miniconda3/bin/python",
+                "CONDA_EXE": "/home/liufeng/miniconda3/bin/conda",
+                "PATH": "/home/liufeng/miniconda3/envs/yolo/bin:/home/liufeng/miniconda3/condabin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin"
+            },
+            "justMyCode": false,
+            "debugStdLib": true,
+            "pathMappings": [
+                {
+                    "localRoot": "/home/liufeng/miniconda3/envs/yolo/lib/python3.11/site-packages",
+                    "remoteRoot": "/home/liufeng/miniconda3/envs/yolo/lib/python3.11/site-packages"
+                }
+            ],
+            "cwd": "${workspaceFolder}",
+            "args": [],
+            "stopOnEntry": false,
+            "preLaunchTask": ""
         }
     ]
 }
