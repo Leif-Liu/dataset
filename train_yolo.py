@@ -51,7 +51,7 @@ train_results = model.train(
     # === 损失函数权重 ===
     box=7.5,                    # 边界框损失权重
     cls=0.5,                    # 分类损失权重
-    dfl=1.5,                    # DFL损失权重
+    dfl=1.5,                    # DFL损失权重 # 可能在train中不起作用，因为输出84通道没有DFL数据
     
     # === 项目管理 ===
     project='yolo_training',    # 项目目录名称
@@ -108,63 +108,105 @@ try:
             raw_outputs = raw_model(img_tensor)
         
         print(f"\n模型原始输出信息:")
-        print(f"输出张量数量: {len(raw_outputs)}")
+        print(f"输出数量: {len(raw_outputs)}")
         
         for i, output in enumerate(raw_outputs):
-            print(f"输出张量 {i}: 形状 {output.shape}")
-            print(f"  数据类型: {output.dtype}")
-            print(f"  设备: {output.device}")
-            print(f"  数值范围: [{output.min().item():.6f}, {output.max().item():.6f}]")
-            print(f"  平均值: {output.mean().item():.6f}")
+            # 检查输出类型
+            if isinstance(output, torch.Tensor):
+                print(f"输出 {i}: 张量，形状 {output.shape}")
+                print(f"  数据类型: {output.dtype}")
+                print(f"  设备: {output.device}")
+                print(f"  数值范围: [{output.min().item():.6f}, {output.max().item():.6f}]")
+                print(f"  平均值: {output.mean().item():.6f}")
+            elif isinstance(output, list):
+                print(f"输出 {i}: 列表，包含 {len(output)} 个元素")
+                for j, item in enumerate(output):
+                    if isinstance(item, torch.Tensor):
+                        print(f"  列表元素 {j}: 张量，形状 {item.shape}")
+                        print(f"    数据类型: {item.dtype}")
+                        print(f"    设备: {item.device}")
+                        print(f"    数值范围: [{item.min().item():.6f}, {item.max().item():.6f}]")
+                        print(f"    平均值: {item.mean().item():.6f}")
+                    else:
+                        print(f"  列表元素 {j}: 类型 {type(item)}")
+            else:
+                print(f"输出 {i}: 未知类型 {type(output)}")
             
             # 详细分析主要输出张量
-            if i == 0:  # 主要检测输出
-                batch_size, channels, num_anchors = output.shape
-                print(f"\n=== 主要输出张量详细分析 ===")
-                print(f"批次大小: {batch_size}")
-                print(f"特征通道数: {channels} (包含坐标+类别+其他特征)")
-                print(f"锚点总数: {num_anchors}")
-                
-                # 分析不同部分的数据
-                output_data = output[0]  # 去除batch维度
-                
-                # 坐标信息 (前4个通道)
-                coords = output_data[:4, :]
-                print(f"\n坐标信息 (前4个通道):")
-                print(f"  X坐标范围: [{coords[0].min().item():.3f}, {coords[0].max().item():.3f}]")
-                print(f"  Y坐标范围: [{coords[1].min().item():.3f}, {coords[1].max().item():.3f}]")
-                print(f"  宽度范围: [{coords[2].min().item():.3f}, {coords[2].max().item():.3f}]")
-                print(f"  高度范围: [{coords[3].min().item():.3f}, {coords[3].max().item():.3f}]")
-                
-                # 类别概率信息 (COCO有80个类别)
-                if channels >= 84:  # 4个坐标 + 80个类别
-                    class_probs = output_data[4:84, :]
-                    print(f"\n类别概率信息 (80个COCO类别):")
-                    print(f"  概率范围: [{class_probs.min().item():.6f}, {class_probs.max().item():.6f}]")
-                    print(f"  平均概率: {class_probs.mean().item():.6f}")
-                    
-                    # 找到置信度最高的检测
-                    max_class_scores, max_class_indices = torch.max(class_probs, dim=0)
-                    top_conf_idx = torch.argmax(max_class_scores)
-                    
-                    print(f"\n置信度最高的检测:")
-                    print(f"  锚点索引: {top_conf_idx.item()}")
-                    print(f"  最高置信度: {max_class_scores[top_conf_idx].item():.6f}")
-                    print(f"  预测类别ID: {max_class_indices[top_conf_idx].item()}")
-                    print(f"  对应坐标: x={coords[0, top_conf_idx].item():.3f}, "
-                          f"y={coords[1, top_conf_idx].item():.3f}, "
-                          f"w={coords[2, top_conf_idx].item():.3f}, "
-                          f"h={coords[3, top_conf_idx].item():.3f}")
-                
-                # 锚点分布分析
-                print(f"\n锚点分布分析:")
-                print(f"8400个锚点来自不同尺度的特征图:")
-                print(f"  - 80×80 特征图: 6400个锚点 (细粒度检测)")
-                print(f"  - 40×40 特征图: 1600个锚点 (中等尺度检测)")
-                print(f"  - 20×20 特征图: 400个锚点 (大目标检测)")
-                print(f"  总计: 6400 + 1600 + 400 = 8400 个锚点")
+            if i == 0 and isinstance(output, torch.Tensor):  # 主要检测输出
+                try:
+                    if len(output.shape) == 3:
+                        batch_size, channels, num_anchors = output.shape
+                        print(f"\n=== 主要输出张量详细分析 ===")
+                        print(f"批次大小: {batch_size}")
+                        print(f"特征通道数: {channels} (包含坐标+类别+其他特征)")
+                        print(f"锚点总数: {num_anchors}")
+                        
+                        # 分析不同部分的数据
+                        output_data = output[0]  # 去除batch维度
+                        
+                        # 坐标信息 (前4个通道)
+                        if channels >= 4:
+                            coords = output_data[:4, :]
+                            print(f"\n坐标信息 (前4个通道):")
+                            print(f"  X坐标范围: [{coords[0].min().item():.3f}, {coords[0].max().item():.3f}]")
+                            print(f"  Y坐标范围: [{coords[1].min().item():.3f}, {coords[1].max().item():.3f}]")
+                            print(f"  宽度范围: [{coords[2].min().item():.3f}, {coords[2].max().item():.3f}]")
+                            print(f"  高度范围: [{coords[3].min().item():.3f}, {coords[3].max().item():.3f}]")
+                        
+                        # 类别概率信息 (COCO有80个类别)
+                        if channels >= 84:  # 4个坐标 + 80个类别
+                            class_probs = output_data[4:84, :]
+                            print(f"\n类别概率信息 (80个COCO类别):")
+                            print(f"  概率范围: [{class_probs.min().item():.6f}, {class_probs.max().item():.6f}]")
+                            print(f"  平均概率: {class_probs.mean().item():.6f}")
+                            
+                            # 找到置信度最高的检测
+                            max_class_scores, max_class_indices = torch.max(class_probs, dim=0)
+                            top_conf_idx = torch.argmax(max_class_scores)
+                            
+                            print(f"\n置信度最高的检测:")
+                            print(f"  锚点索引: {top_conf_idx.item()}")
+                            print(f"  最高置信度: {max_class_scores[top_conf_idx].item():.6f}")
+                            print(f"  预测类别ID: {max_class_indices[top_conf_idx].item()}")
+                            if channels >= 4:
+                                print(f"  对应坐标: x={coords[0, top_conf_idx].item():.3f}, "
+                                      f"y={coords[1, top_conf_idx].item():.3f}, "
+                                      f"w={coords[2, top_conf_idx].item():.3f}, "
+                                      f"h={coords[3, top_conf_idx].item():.3f}")
+                        
+                        # 锚点分布分析
+                        print(f"\n锚点分布分析:")
+                        print(f"8400个锚点来自不同尺度的特征图:")
+                        print(f"  - 80×80 特征图: 6400个锚点 (细粒度检测)")
+                        print(f"  - 40×40 特征图: 1600个锚点 (中等尺度检测)")
+                        print(f"  - 20×20 特征图: 400个锚点 (大目标检测)")
+                        print(f"  总计: 6400 + 1600 + 400 = 8400 个锚点")
+                    else:
+                        print(f"\n⚠️  输出张量维度不符合预期: {output.shape}")
+                        print("   预期: 3维张量 [batch_size, channels, num_anchors]")
+                        
+                except Exception as e:
+                    print(f"\n❌ 分析主要输出张量时出错: {e}")
+                    print(f"   输出张量形状: {output.shape}")
+                    print(f"   输出张量类型: {type(output)}")
         
-        print(f"\n=== 后处理算法说明 ===")
+        print(f"\n=== YOLO11双输出结构说明 ===")
+        print("🎯 输出0: 主要检测结果")
+        print("  - 形状: [1, 84, 8400]")
+        print("  - 84个通道 = 4个坐标特征 + 80个类别概率")
+        print("  - 8400个锚点来自3个尺度特征图的合并")
+        print("  - 用户友好的简化输出")
+        print()
+        print("🎯 输出1: 原始特征图列表")
+        print("  - 包含3个张量的列表")
+        print("  - 张量0: [1, 144, 80, 80] - 高分辨率特征")
+        print("  - 张量1: [1, 144, 40, 40] - 中分辨率特征") 
+        print("  - 张量2: [1, 144, 20, 20] - 低分辨率特征")
+        print("  - 144个通道包含完整训练特征(含DFL)")
+        print("  - 用于调试和高级应用")
+        print()
+        print("=== 后处理算法说明 ===")
         print("1. 置信度过滤: 保留置信度 > threshold 的检测")
         print("2. 坐标解码: 将相对坐标转换为绝对像素坐标")
         print("3. NMS(非极大值抑制): 移除重叠的检测框")
