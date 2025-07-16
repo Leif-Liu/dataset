@@ -57,7 +57,7 @@
             "name": "Debug YOLO Training",
             "type": "debugpy",
             "request": "launch",
-            "program": "${workspaceFolder}/train_yolo.py",
+            "program": "${workspaceFolder}/investigate_yolo11_output.py",   ///home/liufeng/sdk-ragflow/investigate_yolo11_output.py
             "console": "integratedTerminal",
             "python": "/home/liufeng/miniconda3/envs/yolo/bin/python",
             "env": {
