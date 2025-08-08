@@ -29,6 +29,31 @@
             ]
         },
         {
+            "name": "Python Debugger: Ask Questions",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/ask_questions.py",
+            "console": "integratedTerminal",
+            "python": "/home/liufeng/miniconda3/envs/ragflow/bin/python",
+            "env": {
+                "CONDA_DEFAULT_ENV": "ragflow",
+                "CONDA_PREFIX": "/home/liufeng/miniconda3/envs/ragflow",
+                "CONDA_PREFIX_1": "/home/liufeng/miniconda3",
+                "CONDA_PYTHON_EXE": "/home/liufeng/miniconda3/bin/python",
+                "CONDA_EXE": "/home/liufeng/miniconda3/bin/conda"
+            },
+            "justMyCode": false,
+            "debugStdLib": true,
+            "pathMappings": [
+                {
+                    "localRoot": "/home/liufeng/miniconda3/envs/ragflow/lib/python3.11/site-packages",
+                    "remoteRoot": "/home/liufeng/miniconda3/envs/ragflow/lib/python3.11/site-packages"
+                }
+            ],
+            "cwd": "${workspaceFolder}",
+            "args": []
+        },
+        {
             "name": "Debug Process Chunks JSON",
             "type": "debugpy",
             "request": "launch",

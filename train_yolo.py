@@ -219,13 +219,151 @@ except Exception as e:
     print(f"预测失败: {e}")
     print("提示: 请确保test_image.jpg文件存在")
 
-# Export the model to ONNX format for deployment
-print("\n导出ONNX模型...")
-try:
-    path = model.export(format="onnx")  # Returns the path to the exported model
-    print(f"ONNX模型已导出到: {path}")
-except Exception as e:
-    print(f"导出失败: {e}")
+# ================================
+# 多格式模型导出演示
+# ================================
+print("\n" + "="*50)
+print("开始多格式模型导出")
+print("="*50)
+
+# 定义要导出的格式及其用途
+export_formats = {
+    # 通用格式
+    "onnx": {
+        "name": "ONNX",
+        "description": "开放神经网络交换格式 - 跨平台通用",
+        "performance": "CPU推理提升3倍速度",
+        "use_case": "跨平台部署、生产环境首选"
+    },
+    "torchscript": {
+        "name": "TorchScript", 
+        "description": "PyTorch序列化格式",
+        "performance": "原生PyTorch性能",
+        "use_case": "PyTorch生态系统部署"
+    },
+    
+    # 高性能格式
+    "engine": {
+        "name": "TensorRT",
+        "description": "NVIDIA GPU优化引擎",
+        "performance": "GPU推理提升5倍速度", 
+        "use_case": "NVIDIA GPU服务器部署"
+    },
+    "openvino": {
+        "name": "OpenVINO",
+        "description": "Intel CPU/GPU优化引擎",
+        "performance": "Intel硬件提升3倍速度",
+        "use_case": "Intel CPU/GPU部署"
+    },
+    
+    # 移动端格式
+    "tflite": {
+        "name": "TensorFlow Lite",
+        "description": "移动设备轻量化格式", 
+        "performance": "移动设备优化",
+        "use_case": "Android/iOS移动应用"
+    },
+    "coreml": {
+        "name": "CoreML",
+        "description": "Apple设备优化格式",
+        "performance": "iOS/macOS原生优化",
+        "use_case": "iPhone/iPad/Mac应用"
+    },
+    
+    # Web部署格式
+    "tfjs": {
+        "name": "TensorFlow.js",
+        "description": "浏览器JavaScript格式",
+        "performance": "浏览器内推理",
+        "use_case": "网页实时AI应用"
+    }
+}
+
+# 导出模型到各种格式
+exported_models = {}
+print(f"\n开始导出训练好的模型到 {len(export_formats)} 种格式...")
+
+for format_key, format_info in export_formats.items():
+    print(f"\n📦 正在导出 {format_info['name']} 格式...")
+    print(f"   📝 描述: {format_info['description']}")
+    print(f"   ⚡ 性能: {format_info['performance']}")
+    print(f"   🎯 用途: {format_info['use_case']}")
+    
+    try:
+        # 根据格式设置特定参数
+        export_args = {"format": format_key}
+        
+        # 为不同格式添加优化参数
+        if format_key == "onnx":
+            export_args.update({
+                "simplify": True,    # 简化模型图
+                "dynamic": True,     # 支持动态输入尺寸
+                "half": False        # 使用FP32精度
+            })
+        elif format_key == "engine":  # TensorRT
+            export_args.update({
+                "half": True,        # 使用FP16精度加速
+                "dynamic": True,     # 动态输入尺寸
+                "workspace": 4       # 工作空间大小(GB)
+            })
+        elif format_key == "tflite":
+            export_args.update({
+                "int8": False,       # 是否使用INT8量化
+                "half": False        # 保持FP32精度
+            })
+        elif format_key == "coreml":
+            export_args.update({
+                "half": True,        # 使用FP16精度
+                "int8": False        # 不使用INT8量化
+            })
+        
+        # 执行导出
+        export_path = model.export(**export_args)
+        exported_models[format_key] = {
+            "path": export_path,
+            "info": format_info
+        }
+        print(f"   ✅ 成功导出到: {export_path}")
+        
+    except Exception as e:
+        print(f"   ❌ 导出失败: {str(e)}")
+        # 某些格式可能需要特定的依赖或硬件支持
+        if "TensorRT" in str(e):
+            print(f"   💡 提示: TensorRT需要NVIDIA GPU和相应驱动")
+        elif "CoreML" in str(e):
+            print(f"   💡 提示: CoreML主要在macOS上支持")
+        elif "OpenVINO" in str(e):
+            print(f"   💡 提示: 需要安装OpenVINO工具包")
+
+# 输出导出总结
+print(f"\n" + "="*50)
+print("📋 导出结果总结")
+print("="*50)
+
+success_count = len(exported_models)
+total_count = len(export_formats)
+
+print(f"✅ 成功导出: {success_count}/{total_count} 种格式")
+
+if exported_models:
+    print(f"\n📁 已导出的模型文件:")
+    for format_key, model_info in exported_models.items():
+        print(f"   • {model_info['info']['name']}: {model_info['path']}")
+
+# 使用建议
+print(f"\n🎯 部署建议:")
+print(f"• 🖥️  CPU服务器: 使用 ONNX 或 OpenVINO 格式")
+print(f"• 🚀 NVIDIA GPU: 使用 TensorRT 格式 (最高性能)")
+print(f"• 📱 移动应用: Android用TFLite, iOS用CoreML")
+print(f"• 🌐 Web应用: 使用 TensorFlow.js 格式")
+print(f"• 🔧 开发测试: 使用 TorchScript 或 ONNX 格式")
+
+# 性能对比提示
+print(f"\n⚡ 性能提升对比 (相对于原始PyTorch):")
+print(f"• TensorRT (GPU): 高达5倍速度提升")
+print(f"• ONNX (CPU): 高达3倍速度提升") 
+print(f"• OpenVINO (Intel): 高达3倍速度提升")
+print(f"• TFLite/CoreML: 移动设备专项优化")
 
 print("\n=== 训练流程完成 ===")
 print("检查以下目录获取训练结果:")

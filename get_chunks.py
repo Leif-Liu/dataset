@@ -4,7 +4,7 @@ import os
 rag_object = RAGFlow(api_key="ragflow-g1ZGRhNjQyNTYzZTExZjA4ZjZiODY2Nj", base_url="http://10.10.11.7:9380")
 
 # 创建输出目录
-output_dir = "ragflow_chunks"
+output_dir = "ragflow_chunks_QA"
 if not os.path.exists(output_dir):
     os.makedirs(output_dir)
     print(f"创建输出目录: {output_dir}")
@@ -14,7 +14,7 @@ datasets = rag_object.list_datasets()
 print(f"找到 {len(datasets)} 个数据集")
 
 # 查找指定ID的数据集
-target_dataset_id = "62f9a54e5df611f0badf866671171edc"
+target_dataset_id = "6e4d228a72a111f0984162aa9af12f97"
 target_dataset = None
 
 for dataset in datasets:
@@ -34,7 +34,7 @@ docs = target_dataset.list_documents()
 print(f"数据集中有 {len(docs)} 个文档")
 
 # 设置要遍历的总页数
-total_pages = 170  # 您可以根据需要调整这个数值
+total_pages = 10  # 您可以根据需要调整这个数值
 
 if len(docs) > 0:
     # 遍历所有文档
