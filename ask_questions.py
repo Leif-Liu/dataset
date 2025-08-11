@@ -17,8 +17,8 @@ BASE_URL = "http://10.10.11.7:9380"
 AGENT_ID = "723f61ec728c11f0a70962aa9af12f97"
 
 # 文件路径配置
-INPUT_DATASET_PATH = "chunks_json/datasets-qa-0807.json"  # 输入问题数据集
-OUTPUT_ANSWERS_PATH = "/home/liufeng/sdk-ragflow/chunks_json/datasets-ragflow-answers-0807.json"  # 输出答案文件
+INPUT_DATASET_PATH = "chunks_json/datasets-qa-0811.json"   # 输入问题数据集    /home/liufeng/sdk-ragflow/chunks_json/datasets-qa-0811.json
+OUTPUT_ANSWERS_PATH = "/home/liufeng/sdk-ragflow/chunks_json/datasets-ragflow-answers-0811.json"  # 输出答案文件
 # ==================================================
 
 class RAGFlowQASystem:
