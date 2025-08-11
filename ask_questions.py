@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Interactive Q&A system that uses RAGFlow SDK to answer questions.
-Questions can be loaded from local dataset (chunks_json/datasets-chunks-2.json) or input manually.
+Questions can be loaded from local dataset or input manually.
 Based on the RAGFlow SDK example.
 """
 
@@ -10,8 +10,19 @@ import os
 from typing import List, Dict
 from ragflow_sdk import RAGFlow, Agent
 
+# ==================== 配置区域 ====================
+# RAGFlow 连接配置
+API_KEY = "ragflow-g1ZGRhNjQyNTYzZTExZjA4ZjZiODY2Nj"
+BASE_URL = "http://10.10.11.7:9380"
+AGENT_ID = "723f61ec728c11f0a70962aa9af12f97"
+
+# 文件路径配置
+INPUT_DATASET_PATH = "chunks_json/datasets-qa-0807.json"  # 输入问题数据集
+OUTPUT_ANSWERS_PATH = "/home/liufeng/sdk-ragflow/chunks_json/datasets-ragflow-answers-0807.json"  # 输出答案文件
+# ==================================================
+
 class RAGFlowQASystem:
-    def __init__(self, api_key: str, base_url: str, agent_id: str, dataset_path: str = "chunks_json/datasets-qa-0807.json"):
+    def __init__(self, api_key: str, base_url: str, agent_id: str, dataset_path: str = INPUT_DATASET_PATH):
         """Initialize the RAGFlow Q&A system."""
         self.dataset_path = dataset_path
         self.qa_data = []
@@ -109,7 +120,7 @@ class RAGFlowQASystem:
     
     def save_qa_to_file(self, question: str, answer: str):
         """Save question and answer to JSON file."""
-        output_file = "/home/liufeng/sdk-ragflow/chunks_json/datasets-ragflow-answers-0807.json"
+        output_file = OUTPUT_ANSWERS_PATH
         
         # Create the entry
         qa_entry = {
@@ -217,12 +228,9 @@ class RAGFlowQASystem:
 
 def main():
     """Main interactive loop."""
-    # Configuration - Update these with your actual values
-    API_KEY = "ragflow-g1ZGRhNjQyNTYzZTExZjA4ZjZiODY2Nj"
-    BASE_URL = "http://10.10.11.7:9380"
-    AGENT_ID = "723f61ec728c11f0a70962aa9af12f97"
-    
     print("Initializing RAGFlow Q&A System...")
+    print(f"输入数据集: {INPUT_DATASET_PATH}")
+    print(f"输出文件: {OUTPUT_ANSWERS_PATH}")
     
     # Initialize the RAGFlow Q&A system
     try:
@@ -237,7 +245,7 @@ def main():
     print("\n===== Miss R (RAGFlow Q&A System) ====\n")
     print("Hello. What can I do for you?")
     print("\nAvailable commands:")
-    print("- Type your question normally (answers auto-saved to datasets-ragflow-answers-0807.json)")
+    print(f"- Type your question normally (answers auto-saved to {os.path.basename(OUTPUT_ANSWERS_PATH)})")
     print("- Type 'list' to see sample questions from dataset")
     print("- Type 'search <keyword>' to find questions with a keyword")
     print("- Type 'batch' to process all questions from dataset")
