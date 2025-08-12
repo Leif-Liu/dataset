@@ -105,6 +105,39 @@
             "args": [],
             "stopOnEntry": false,
             "preLaunchTask": ""
+        },
+        {
+            "name": "Debug CLIP Training",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/train_CLIP.py",
+            "console": "integratedTerminal",
+            "python": "/home/liufeng/miniconda3/envs/CLIP/bin/python",
+            "env": {
+                "CONDA_DEFAULT_ENV": "CLIP",
+                "CONDA_PREFIX": "/home/liufeng/miniconda3/envs/CLIP",
+                "CONDA_PREFIX_1": "/home/liufeng/miniconda3",
+                "CONDA_PYTHON_EXE": "/home/liufeng/miniconda3/bin/python",
+                "CONDA_EXE": "/home/liufeng/miniconda3/bin/conda",
+                "PATH": "/home/liufeng/miniconda3/envs/CLIP/bin:/home/liufeng/miniconda3/condabin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin",
+                "HTTP_PROXY": "http://10.110.2.13:3128",
+                "HTTPS_PROXY": "http://10.110.2.13:3128",
+                "ALL_PROXY": "http://10.110.2.13:3128",
+                "NO_PROXY": "localhost,127.0.0.1,10.10.11.*",
+                "no_proxy": "localhost,127.0.0.1,10.10.11.*"
+            },
+            "justMyCode": false,
+            "debugStdLib": true,
+            "pathMappings": [
+                {
+                    "localRoot": "/home/liufeng/miniconda3/envs/CLIP/lib/python3.11/site-packages",
+                    "remoteRoot": "/home/liufeng/miniconda3/envs/CLIP/lib/python3.11/site-packages"
+                }
+            ],
+            "cwd": "${workspaceFolder}",
+            "args": [],
+            "stopOnEntry": false,
+            "preLaunchTask": ""
         }
     ]
 }
