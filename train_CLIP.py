@@ -93,7 +93,8 @@ for epoch in range(num_epochs):
         logits_per_image = outputs.logits_per_image  # [B, B]
         logits_per_text = outputs.logits_per_text    # [B, B]
 
-        # 真实标签：对角线上匹配，假设 batch 中图文一一对应
+        # 真实标签：对角线上匹配正样本，计算Loss前会进行一次softmax操作，所以batch 中图文对角线位置Label对应1, 其他位置Label为0；当前代码的labels 示例，torch.arange(batch_size)  # [0, 1, 2, 3, ...]
+        # 真实标签：对角线上匹配，使用类别索引格式 [0,1,2,...]  # CrossEntropyLoss内部会进行softmax，期望对角线位置概率最高
         labels = torch.arange(pixel_values.size(0)).to(device)
 
         # 对称交叉熵损失（InfoNCE）
