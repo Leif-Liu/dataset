@@ -88,7 +88,7 @@ class RAGFlowQASystem:
             traceback.print_exc()
             exit(1)
     
-    def ask_ragflow(self, question: str, save_to_file: bool = True):
+    def ask_ragflow(self, question: str, save_to_file: bool = True, start_time: str = None):
         """Ask question to RAGFlow and get streaming response."""
         if not question.strip():
             print("Please provide a valid question.")
@@ -97,17 +97,26 @@ class RAGFlowQASystem:
         try:
             cont = ""
             first_token = True
+            first_token_time = None
             for ans in self.session.ask(question, stream=True):
                 if first_token and ans.content:
                     first_token_time = self.get_current_timestamp()
-                    print(f"[首个token时间: {first_token_time}]")
+                    if start_time:
+                        elapsed_time = self.calculate_time_diff(start_time, first_token_time)
+                        print(f"[首个token时间: {first_token_time}] [首个token耗时: {elapsed_time}]")
+                    else:
+                        print(f"[首个token时间: {first_token_time}]")
                     first_token = False
                 print(ans.content[len(cont):], end='', flush=True)
                 cont = ans.content
             
-            # Add completion timestamp
+            # Add completion timestamp and calculate response time
             completion_time = self.get_current_timestamp()
-            print(f"\n[回答完成时间: {completion_time}]")  # Add newline after response with timestamp
+            if first_token_time:
+                response_time = self.calculate_time_diff(first_token_time, completion_time)
+                print(f"\n[回答完成时间: {completion_time}] [回答耗时: {response_time}]")
+            else:
+                print(f"\n[回答完成时间: {completion_time}]")
             
             # Save to file if requested
             if save_to_file and cont.strip():
@@ -164,6 +173,18 @@ class RAGFlowQASystem:
         import datetime
         return datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     
+    def calculate_time_diff(self, start_time_str: str, end_time_str: str):
+        """Calculate time difference between two timestamp strings."""
+        import datetime
+        try:
+            start_time = datetime.datetime.strptime(start_time_str, "%Y-%m-%d %H:%M:%S")
+            end_time = datetime.datetime.strptime(end_time_str, "%Y-%m-%d %H:%M:%S")
+            diff = end_time - start_time
+            total_seconds = diff.total_seconds()
+            return f"{total_seconds:.2f}秒"
+        except Exception as e:
+            return f"计算错误: {e}"
+    
     def ask_all_questions_from_dataset(self):
         """Ask all questions from the dataset to RAGFlow."""
         if not self.qa_data:
@@ -201,7 +222,7 @@ class RAGFlowQASystem:
             print('='*60)
             print(f"\n==== RAGFlow Response (开始时间: {current_time}) ====\n")
             
-            self.ask_ragflow(question)
+            self.ask_ragflow(question, start_time=current_time)
             
             # Handle user interaction based on mode
             if not continuous_mode and i < len(self.qa_data):
@@ -305,7 +326,7 @@ def main():
         print(f"\n==== Miss R (回答时间: {current_time}) ====\n")
         
         # Ask question to RAGFlow
-        qa_system.ask_ragflow(question)
+        qa_system.ask_ragflow(question, start_time=current_time)
 
 
 if __name__ == "__main__":
