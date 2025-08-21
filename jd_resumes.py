@@ -98,12 +98,16 @@ class RAGFlowQASystem:
             cont = ""
             first_token = True
             first_token_time = None
+            first_token_elapsed_str = None
+            response_elapsed_str = None
+            
             for ans in self.session.ask(question, stream=True):
                 if first_token and ans.content:
                     first_token_time = self.get_current_timestamp()
                     if start_time:
                         elapsed_time = self.calculate_time_diff(start_time, first_token_time)
-                        print(f"[首个token时间: {first_token_time}] [首个token耗时: {elapsed_time}]")
+                        first_token_elapsed_str = f"首个token耗时: {elapsed_time}"
+                        print(f"[首个token时间: {first_token_time}] [{first_token_elapsed_str}]")
                     else:
                         print(f"[首个token时间: {first_token_time}]")
                     first_token = False
@@ -114,13 +118,14 @@ class RAGFlowQASystem:
             completion_time = self.get_current_timestamp()
             if first_token_time:
                 response_time = self.calculate_time_diff(first_token_time, completion_time)
-                print(f"\n[回答完成时间: {completion_time}] [回答耗时: {response_time}]")
+                response_elapsed_str = f"回答耗时: {response_time}"
+                print(f"\n[回答完成时间: {completion_time}] [{response_elapsed_str}]")
             else:
                 print(f"\n[回答完成时间: {completion_time}]")
             
             # Save to file if requested
             if save_to_file and cont.strip():
-                self.save_qa_to_file(question, cont)
+                self.save_qa_to_file(question, cont, first_token_elapsed_str, response_elapsed_str)
             
             return cont
         except Exception as e:
@@ -135,7 +140,7 @@ class RAGFlowQASystem:
             
             return error_msg
     
-    def save_qa_to_file(self, question: str, answer: str):
+    def save_qa_to_file(self, question: str, answer: str, first_token_elapsed: str = None, response_elapsed: str = None):
         """Save question and answer to JSON file."""
         output_file = OUTPUT_ANSWERS_PATH
         
@@ -143,7 +148,9 @@ class RAGFlowQASystem:
         qa_entry = {
             "question": question,
             "ragflow_answer": answer,
-            "timestamp": self.get_current_timestamp()
+            "timestamp": self.get_current_timestamp(),
+            "first_token_elapsed": first_token_elapsed,
+            "response_elapsed": response_elapsed
         }
         
         # Load existing data or create new list
