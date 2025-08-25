@@ -22,6 +22,13 @@ OPENAI_API_KEY = "vllm"  # 请替换为您的OpenAI API密钥
 OPENAI_BASE_URL = "http://10.10.11.7:11541/v1"  # 或者使用其他兼容的API端点
 OPENAI_MODEL = "openai-mirror/gpt-oss-20b"  # 或 gpt-4, gpt-4-turbo 等
 
+# OpenAI 调用参数配置（修正为更合理的值）
+OPENAI_TEMPERATURE = 0.7   # 温度参数，控制随机性（恢复正常值）
+OPENAI_TOP_P = 0.9         # Top-p 采样参数（恢复正常值）
+OPENAI_PRESENCE_PENALTY = 0.0   # 存在惩罚（暂时关闭）
+OPENAI_FREQUENCY_PENALTY = 0.0  # 频率惩罚（暂时关闭）
+OPENAI_MAX_TOKENS = 131072   # 最大token数（设置合理值）
+
 # 文件路径配置
 INPUT_DATASET_PATH  = "/home/liufeng/sdk-ragflow/chunks_json/datasets-jd-0822.json"   # 输入问题数据集    /home/liufeng/sdk-ragflow/chunks_json/datasets-qa-0811.json
 OUTPUT_ANSWERS_PATH = "/home/liufeng/sdk-ragflow/chunks_json/retrieval-resume-0820.json"  # 输出答案文件
@@ -118,10 +125,10 @@ class RAGFlowQASystem:
                     first_token_time = self.get_current_timestamp()
                     if start_time:
                         elapsed_time = self.calculate_time_diff(start_time, first_token_time)
-                        first_token_elapsed_str = f"首个token耗时: {elapsed_time}"
-                        print(f"[首个token时间: {first_token_time}] [{first_token_elapsed_str}]")
+                        first_token_elapsed_str = f"RAGFlow首个token耗时: {elapsed_time}"
+                        print(f"[RAGFlow首个token时间: {first_token_time}] [{first_token_elapsed_str}]")
                     else:
-                        print(f"[首个token时间: {first_token_time}]")
+                        print(f"[RAGFlow首个token时间: {first_token_time}]")
                     first_token = False
                 print(ans.content[len(cont):], end='', flush=True)
                 cont = ans.content
@@ -130,25 +137,33 @@ class RAGFlowQASystem:
             completion_time = self.get_current_timestamp()
             if first_token_time:
                 response_time = self.calculate_time_diff(first_token_time, completion_time)
-                response_elapsed_str = f"回答耗时: {response_time}"
-                print(f"\n[回答完成时间: {completion_time}] [{response_elapsed_str}]")
+                response_elapsed_str = f"RAGFlow回答耗时: {response_time}"
+                print(f"\n[RAGFlow回答完成时间: {completion_time}] [{response_elapsed_str}]")
             else:
-                print(f"\n[回答完成时间: {completion_time}]")
+                print(f"\n[RAGFlow回答完成时间: {completion_time}]")
             
             # Process with OpenAI if we got a valid answer
             openai_answer = None
             if cont.strip() and not cont.startswith("**ERROR"):
+                openai_start_time = self.get_current_timestamp()
                 print(f"\n{'='*60}")
-                print("正在使用OpenAI大模型进一步处理答案...")
+                print(f"[{openai_start_time}] 正在使用OpenAI大模型进一步处理答案...")
                 print('='*60)
                 openai_answer = self.process_with_openai(question, cont)
-                print(f"\n==== OpenAI处理后的答案 ====")
+                openai_end_time = self.get_current_timestamp()
+                openai_elapsed = self.calculate_time_diff(openai_start_time, openai_end_time)
+                print(f"\n==== OpenAI处理后的答案 [{openai_end_time}] [OpenAI耗时: {openai_elapsed}] ====")
                 print(openai_answer)
                 print('='*60)
             
             # Save to file if requested
             if save_to_file and cont.strip():
-                self.save_qa_to_file(question, cont, first_token_elapsed_str, response_elapsed_str, openai_answer)
+                # 准备OpenAI耗时信息
+                openai_elapsed_str = None
+                if 'openai_elapsed' in locals():
+                    openai_elapsed_str = f"OpenAI耗时: {openai_elapsed}"
+                
+                self.save_qa_to_file(question, cont, first_token_elapsed_str, response_elapsed_str, openai_answer, openai_elapsed_str)
             
             return cont
         except Exception as e:
@@ -164,7 +179,7 @@ class RAGFlowQASystem:
             return error_msg
     
     def save_qa_to_file(self, question: str, answer: str, first_token_elapsed: str = None, 
-                       response_elapsed: str = None, openai_answer: str = None):
+                       response_elapsed: str = None, openai_answer: str = None, openai_elapsed: str = None):
         """Save question and answer to JSON file."""
         output_file = OUTPUT_ANSWERS_PATH
         
@@ -174,8 +189,9 @@ class RAGFlowQASystem:
             "ragflow_answer": answer,
             "openai_answer": openai_answer,
             "timestamp": self.get_current_timestamp(),
-            "first_token_elapsed": first_token_elapsed,
-            "response_elapsed": response_elapsed
+            "ragflow_first_token_elapsed": first_token_elapsed,
+            "ragflow_response_elapsed": response_elapsed,
+            "openai_elapsed": openai_elapsed
         }
         
         # Load existing data or create new list
@@ -218,7 +234,7 @@ class RAGFlowQASystem:
             return f"计算错误: {e}"
     
     def process_with_openai(self, question: str, ragflow_answer: str, 
-                          custom_prompt: str = None) -> str:
+                          custom_prompt: str = None, **openai_params) -> str:
         """
         使用OpenAI大模型进一步处理RAGFlow的答案
         
@@ -297,13 +313,24 @@ RAG检索到的内容：{ragflow_answer}
         try:
             print("\n[OpenAI] 正在调用大模型处理答案...")
             
+            # 准备API调用参数
+            api_params = {
+                "model": OPENAI_MODEL,
+                "messages": messages,
+                "temperature": OPENAI_TEMPERATURE,
+                "top_p": OPENAI_TOP_P,
+                "presence_penalty": OPENAI_PRESENCE_PENALTY,
+                "frequency_penalty": OPENAI_FREQUENCY_PENALTY,
+                "max_tokens": OPENAI_MAX_TOKENS
+            }
+            
+            # 允许通过openai_params覆盖默认参数
+            api_params.update(openai_params)
+            
+            print(f"[OpenAI] 调用参数: temperature={api_params['temperature']}, top_p={api_params['top_p']}, presence_penalty={api_params['presence_penalty']}, frequency_penalty={api_params['frequency_penalty']}")
+            
             # 调用OpenAI API
-            response = self.openai_client.chat.completions.create(
-                model=OPENAI_MODEL,
-                messages=messages,
-                temperature=0.7,
-                max_tokens=131072
-            )
+            response = self.openai_client.chat.completions.create(**api_params)
             
             if response.choices and len(response.choices) > 0:
                 openai_answer = response.choices[0].message.content
