@@ -7,9 +7,9 @@ Based on the RAGFlow SDK example.
 
 import json
 import os
-import requests
 from typing import List, Dict, Optional
 from ragflow_sdk import RAGFlow, Agent
+from openai import OpenAI
 
 # ==================== 配置区域 ====================
 # RAGFlow 连接配置
@@ -26,131 +26,6 @@ OPENAI_MODEL = "openai-mirror/gpt-oss-20b"  # 或 gpt-4, gpt-4-turbo 等
 INPUT_DATASET_PATH  = "/home/liufeng/sdk-ragflow/chunks_json/datasets-jd-0822.json"   # 输入问题数据集    /home/liufeng/sdk-ragflow/chunks_json/datasets-qa-0811.json
 OUTPUT_ANSWERS_PATH = "/home/liufeng/sdk-ragflow/chunks_json/retrieval-resume-0820.json"  # 输出答案文件
 # ==================================================
-
-class OpenAIClient:
-    """OpenAI API客户端类，模拟openai库的接口"""
-    
-    def __init__(self, api_key: str, base_url: str = "https://api.openai.com/v1"):
-        self.api_key = api_key
-        self.base_url = base_url.rstrip('/')
-        self.chat = self.Chat(self)
-    
-    class Chat:
-        def __init__(self, client):
-            self.client = client
-            self.completions = self.client.ChatCompletions(client)
-    
-    class ChatCompletions:
-        def __init__(self, client):
-            self.client = client
-        
-        def create(self, model: str, messages: List[Dict], temperature: float = 0.7, 
-                  max_tokens: Optional[int] = None, stream: bool = False, **kwargs):
-            """
-            创建聊天完成请求
-            
-            Args:
-                model: 模型名称
-                messages: 消息列表，格式为 [{"role": "user", "content": "..."}]
-                temperature: 温度参数
-                max_tokens: 最大token数
-                stream: 是否流式响应
-                **kwargs: 其他参数
-            """
-            url = f"{self.client.base_url}/chat/completions"
-            
-            headers = {
-                "Authorization": f"Bearer {self.client.api_key}",
-                "Content-Type": "application/json"
-            }
-            
-            data = {
-                "model": model,
-                "messages": messages,
-                "temperature": temperature,
-                "stream": stream,
-                **kwargs
-            }
-            
-            if max_tokens is not None:
-                data["max_tokens"] = max_tokens
-            
-            try:
-                response = requests.post(url, headers=headers, json=data, timeout=60)
-                response.raise_for_status()
-                
-                if stream:
-                    # 简化版流式处理，实际应用中需要处理Server-Sent Events
-                    return self._handle_stream_response(response)
-                else:
-                    result = response.json()
-                    return self._create_response_object(result)
-                    
-            except requests.exceptions.RequestException as e:
-                print(f"OpenAI API请求失败: {e}")
-                return self._create_error_response(str(e))
-        
-        def _handle_stream_response(self, response):
-            """处理流式响应（简化版）"""
-            # 这里简化处理，实际应用中需要解析SSE格式
-            try:
-                result = response.json()
-                return self._create_response_object(result)
-            except:
-                return self._create_error_response("流式响应解析失败")
-        
-        def _create_response_object(self, result):
-            """创建响应对象"""
-            class Choice:
-                def __init__(self, choice_data):
-                    self.message = self.Message(choice_data.get('message', {}))
-                    self.finish_reason = choice_data.get('finish_reason')
-                    self.index = choice_data.get('index', 0)
-                
-                class Message:
-                    def __init__(self, message_data):
-                        self.role = message_data.get('role', 'assistant')
-                        self.content = message_data.get('content', '')
-            
-            class Usage:
-                def __init__(self, usage_data):
-                    self.prompt_tokens = usage_data.get('prompt_tokens', 0)
-                    self.completion_tokens = usage_data.get('completion_tokens', 0)
-                    self.total_tokens = usage_data.get('total_tokens', 0)
-            
-            class Response:
-                def __init__(self, result):
-                    self.id = result.get('id', '')
-                    self.object = result.get('object', 'chat.completion')
-                    self.created = result.get('created', 0)
-                    self.model = result.get('model', '')
-                    self.choices = [Choice(choice) for choice in result.get('choices', [])]
-                    self.usage = Usage(result.get('usage', {}))
-            
-            return Response(result)
-        
-        def _create_error_response(self, error_message):
-            """创建错误响应"""
-            class ErrorResponse:
-                def __init__(self, error_msg):
-                    self.choices = []
-                    self.error = error_msg
-                    
-                    # 创建一个错误消息的choice
-                    class ErrorChoice:
-                        def __init__(self, error_msg):
-                            self.message = self.ErrorMessage(error_msg)
-                            self.finish_reason = "error"
-                            self.index = 0
-                        
-                        class ErrorMessage:
-                            def __init__(self, error_msg):
-                                self.role = "assistant"
-                                self.content = f"**ERROR**: {error_msg}"
-                    
-                    self.choices = [ErrorChoice(error_msg)]
-            
-            return ErrorResponse(error_message)
 
 
 class RAGFlowQASystem:
@@ -169,7 +44,7 @@ class RAGFlowQASystem:
         self.connect_to_ragflow()
         
         # Initialize OpenAI client
-        self.openai_client = OpenAIClient(api_key=openai_api_key, base_url=openai_base_url)
+        self.openai_client = OpenAI(api_key=openai_api_key, base_url=openai_base_url)
         print(f"OpenAI客户端已初始化，使用端点: {openai_base_url}")
     
     def load_dataset(self):
