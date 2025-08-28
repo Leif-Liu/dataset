@@ -12,7 +12,7 @@ from ragflow_sdk import RAGFlow, Agent
 from openai import OpenAI
 
 # ==================== 配置区域 ====================
-# RAGFlow 连接配置
+# RAGFlow 连接配置 
 API_KEY  = "ragflow-g1ZGRhNjQyNTYzZTExZjA4ZjZiODY2Nj"
 BASE_URL = "http://10.10.11.7:9380"
 AGENT_ID = "673a2bda7bf911f0a13f2e823edec181"
