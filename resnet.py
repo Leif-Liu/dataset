@@ -186,17 +186,39 @@ def save_model(model, model_name):
     model.save(savedmodel_path, save_format='tf')
     print(f"✓ SavedModel格式已保存到: {savedmodel_path}")
     
-    # 2. 保存为H5格式（Keras格式）
-    h5_path = os.path.join(save_dir, f"{model_name}.h5")
-    model.save(h5_path, save_format='h5')
-    print(f"✓ H5格式已保存到: {h5_path}")
+    # 2. 保存为Keras原生格式（推荐替代H5）
+    keras_path = os.path.join(save_dir, f"{model_name}.keras")
+    try:
+        model.save(keras_path, save_format='keras')
+        print(f"✓ Keras格式已保存到: {keras_path}")
+    except Exception as e:
+        print(f"⚠ Keras格式保存失败: {e}")
+        # 对于子类模型，尝试使用SavedModel格式
+        print("  尝试使用SavedModel格式作为替代...")
     
-    # 3. 只保存权重
+    # 3. 只保存权重（这个总是可以工作的）
     weights_path = os.path.join(save_dir, f"{model_name}_weights.h5")
     model.save_weights(weights_path)
     print(f"✓ 权重文件已保存到: {weights_path}")
     
-    # 4. 保存为TensorFlow Lite格式（用于移动端部署）
+    # 4. 保存模型配置到JSON文件（用于重建模型架构）
+    try:
+        config_path = os.path.join(save_dir, f"{model_name}_config.json")
+        model_config = {
+            'model_type': 'ResNet18',
+            'num_classes': model.linear.units,
+            'input_shape': [32, 32, 3],
+            'description': f'ResNet-18 model trained on CIFAR-10, saved at {model_name}'
+        }
+        
+        import json
+        with open(config_path, 'w') as f:
+            json.dump(model_config, f, indent=2)
+        print(f"✓ 模型配置已保存到: {config_path}")
+    except Exception as e:
+        print(f"⚠ 模型配置保存失败: {e}")
+    
+    # 5. 保存为TensorFlow Lite格式（用于移动端部署）
     try:
         tflite_path = os.path.join(save_dir, f"{model_name}.tflite")
         converter = tf.lite.TFLiteConverter.from_keras_model(model)
@@ -209,7 +231,7 @@ def save_model(model, model_name):
     except Exception as e:
         print(f"⚠ TensorFlow Lite转换失败: {e}")
     
-    # 5. 导出为ONNX格式（可选，需要tf2onnx库）
+    # 6. 导出为ONNX格式（可选，需要tf2onnx库）
     try:
         import tf2onnx
         onnx_path = os.path.join(save_dir, f"{model_name}.onnx")
@@ -233,6 +255,30 @@ def save_model(model, model_name):
     print(f"\n模型保存完成！所有文件都在 {save_dir} 目录中")
 
 
+def create_model_from_config(config_path):
+    """
+    从配置文件创建模型
+    
+    Args:
+        config_path: 配置文件路径
+        
+    Returns:
+        创建的模型
+    """
+    import json
+    with open(config_path, 'r') as f:
+        config = json.load(f)
+    
+    if config['model_type'] == 'ResNet18':
+        model = ResNet18(num_classes=config['num_classes'])
+        # 构建模型
+        dummy_input = tf.random.normal((1, *config['input_shape']))
+        _ = model(dummy_input, training=False)
+        return model
+    else:
+        raise ValueError(f"不支持的模型类型: {config['model_type']}")
+
+
 def load_saved_model(model_path):
     """
     加载保存的模型
@@ -245,17 +291,46 @@ def load_saved_model(model_path):
     """
     print(f"正在加载模型: {model_path}")
     
-    if model_path.endswith('.h5'):
-        # 加载H5格式模型
-        model = tf.keras.models.load_model(model_path)
-    elif os.path.isdir(model_path):
-        # 加载SavedModel格式
-        model = tf.keras.models.load_model(model_path)
-    else:
-        raise ValueError("不支持的模型格式")
-    
-    print("✓ 模型加载成功")
-    return model
+    try:
+        if model_path.endswith('.keras'):
+            # 加载Keras原生格式模型
+            model = tf.keras.models.load_model(model_path)
+        elif model_path.endswith('.h5'):
+            # 加载H5格式模型
+            model = tf.keras.models.load_model(model_path)
+        elif os.path.isdir(model_path):
+            # 加载SavedModel格式
+            model = tf.keras.models.load_model(model_path)
+        elif model_path.endswith('_weights.h5'):
+            # 如果是权重文件，需要重建模型架构
+            print("检测到权重文件，正在重建模型架构...")
+            model = ResNet18(num_classes=10)  # 默认CIFAR-10
+            
+            # 构建模型（通过一次前向传播）
+            dummy_input = tf.random.normal((1, 32, 32, 3))
+            _ = model(dummy_input, training=False)
+            
+            # 加载权重
+            model.load_weights(model_path)
+            print("✓ 权重加载成功")
+        else:
+            raise ValueError(f"不支持的模型格式: {model_path}")
+        
+        print("✓ 模型加载成功")
+        return model
+        
+    except Exception as e:
+        print(f"❌ 模型加载失败: {e}")
+        
+        # 如果加载失败，尝试从权重文件重建
+        base_path = model_path.replace('.keras', '').replace('.h5', '').replace('_savedmodel', '')
+        weights_path = f"{base_path}_weights.h5"
+        
+        if os.path.exists(weights_path):
+            print(f"尝试从权重文件重建模型: {weights_path}")
+            return load_saved_model(weights_path)
+        else:
+            raise e
 
 
 def test_saved_model(model_path):
@@ -274,11 +349,34 @@ def test_saved_model(model_path):
     (_, _), (x_test, y_test) = datasets.cifar10.load_data()
     x_test = x_test.astype('float32') / 255.0
     
-    # 如果模型使用分类编码，转换标签
-    if len(model.output.shape) > 1 and model.output.shape[-1] > 1:
-        y_test_categorical = tf.keras.utils.to_categorical(y_test, 10)
+    # 先进行一次预测来判断输出格式
+    sample_prediction = model.predict(x_test[:1], verbose=0)
+    num_classes = sample_prediction.shape[-1] if len(sample_prediction.shape) > 1 else 1
+    
+    print(f"模型输出形状: {sample_prediction.shape}")
+    print(f"检测到类别数: {num_classes}")
+    
+    # 根据输出格式选择合适的损失函数和标签格式
+    if num_classes > 1:
+        # 多分类输出，使用分类交叉熵
+        y_test_categorical = tf.keras.utils.to_categorical(y_test, num_classes)
+        
+        # 重新编译模型以确保正确的损失函数
+        model.compile(
+            optimizer='adam',
+            loss='categorical_crossentropy',
+            metrics=['accuracy']
+        )
+        
         test_loss, test_accuracy = model.evaluate(x_test, y_test_categorical, verbose=0)
     else:
+        # 二分类或回归输出
+        model.compile(
+            optimizer='adam',
+            loss='sparse_categorical_crossentropy',
+            metrics=['accuracy']
+        )
+        
         test_loss, test_accuracy = model.evaluate(x_test, y_test, verbose=0)
     
     print(f"加载模型测试结果:")
@@ -288,16 +386,26 @@ def test_saved_model(model_path):
     # 预测几个样本
     print("\n预测前5个测试样本:")
     predictions = model.predict(x_test[:5], verbose=0)
-    predicted_classes = np.argmax(predictions, axis=1)
+    
+    if num_classes > 1:
+        predicted_classes = np.argmax(predictions, axis=1)
+    else:
+        predicted_classes = predictions.flatten().astype(int)
+    
     true_classes = y_test[:5].flatten()
     
     cifar10_classes = ['airplane', 'automobile', 'bird', 'cat', 'deer', 
                        'dog', 'frog', 'horse', 'ship', 'truck']
     
     for i in range(5):
+        if num_classes > 1:
+            confidence = np.max(tf.nn.softmax(predictions[i]))
+        else:
+            confidence = predictions[i][0] if len(predictions[i].shape) > 0 else predictions[i]
+            
         print(f"样本 {i+1}: 真实类别={cifar10_classes[true_classes[i]]}, "
               f"预测类别={cifar10_classes[predicted_classes[i]]}, "
-              f"置信度={np.max(tf.nn.softmax(predictions[i])):.3f}")
+              f"置信度={confidence:.3f}")
     
     return model
 
@@ -387,7 +495,7 @@ def simple_train_example():
     history = model.fit(
         x_train, y_train,
         batch_size=128,
-        epochs=10,  # 较少的epoch用于快速测试
+        epochs=2,  # 较少的epoch用于快速测试
         validation_data=(x_test, y_test),
         verbose=1
     )
@@ -422,7 +530,7 @@ if __name__ == "__main__":
         # 询问是否测试保存的模型
         test_choice = input("\n是否测试刚保存的模型？(y/n): ")
         if test_choice.lower() == 'y':
-            test_saved_model("saved_models/resnet18_full_training.h5")
+            test_saved_model("saved_models/resnet18_full_training_savedmodel")
             
     elif choice == "2":
         model, history = simple_train_example()
@@ -431,13 +539,13 @@ if __name__ == "__main__":
         # 询问是否测试保存的模型
         test_choice = input("\n是否测试刚保存的模型？(y/n): ")
         if test_choice.lower() == 'y':
-            test_saved_model("saved_models/resnet18_simple_training.h5")
+            test_saved_model("saved_models/resnet18_simple_training_savedmodel")
             
     elif choice == "3":
         print("\n可用的模型文件:")
         save_dir = "saved_models"
         if os.path.exists(save_dir):
-            model_files = [f for f in os.listdir(save_dir) if f.endswith('.h5') or f.endswith('_savedmodel')]
+            model_files = [f for f in os.listdir(save_dir) if f.endswith('.keras') or f.endswith('_savedmodel') or f.endswith('_weights.h5')]
             if model_files:
                 for i, file in enumerate(model_files, 1):
                     print(f"{i}. {file}")
