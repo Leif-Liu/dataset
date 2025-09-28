@@ -188,6 +188,63 @@
             "args": [],
             "stopOnEntry": false,
             "preLaunchTask": ""
+        },
+        {
+            "name": "Debug Hide Info",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/hide_info.py",
+            "console": "integratedTerminal",
+            "python": "/home/liufeng/miniconda3/envs/ragflow/bin/python",
+            "env": {
+                "CONDA_DEFAULT_ENV": "ragflow",
+                "CONDA_PREFIX": "/home/liufeng/miniconda3/envs/ragflow",
+                "CONDA_PREFIX_1": "/home/liufeng/miniconda3",
+                "CONDA_PYTHON_EXE": "/home/liufeng/miniconda3/bin/python",
+                "CONDA_EXE": "/home/liufeng/miniconda3/bin/conda"
+            },
+            "justMyCode": false,
+            "debugStdLib": true,
+            "pathMappings": [
+                {
+                    "localRoot": "/home/liufeng/miniconda3/envs/ragflow/lib/python3.11/site-packages",
+                    "remoteRoot": "/home/liufeng/miniconda3/envs/ragflow/lib/python3.11/site-packages"
+                }
+            ],
+            "cwd": "${workspaceFolder}",
+            "args": [],
+            "stopOnEntry": false,
+            "preLaunchTask": ""
+        },
+        {
+            "name": "Debug ResNet Training",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/resnet.py",
+            "console": "integratedTerminal",
+            "python": "/home/liufeng/miniconda3/envs/tensorflow/bin/python",
+            "env": {
+                "CONDA_DEFAULT_ENV": "tensorflow",
+                "CONDA_PREFIX": "/home/liufeng/miniconda3/envs/tensorflow",
+                "CONDA_PREFIX_1": "/home/liufeng/miniconda3",
+                "CONDA_PYTHON_EXE": "/home/liufeng/miniconda3/bin/python",
+                "CONDA_EXE": "/home/liufeng/miniconda3/bin/conda",
+                "PATH": "/home/liufeng/miniconda3/envs/tensorflow/bin:/home/liufeng/miniconda3/condabin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin",
+                "TF_CPP_MIN_LOG_LEVEL": "1",
+                "TF_ENABLE_ONEDNN_OPTS": "0"
+            },
+            "justMyCode": false,
+            "debugStdLib": true,
+            "pathMappings": [
+                {
+                    "localRoot": "/home/liufeng/miniconda3/envs/tensorflow/lib/python3.11/site-packages",
+                    "remoteRoot": "/home/liufeng/miniconda3/envs/tensorflow/lib/python3.11/site-packages"
+                }
+            ],
+            "cwd": "${workspaceFolder}",
+            "args": [],
+            "stopOnEntry": false,
+            "preLaunchTask": ""
         }
     ]
 }
