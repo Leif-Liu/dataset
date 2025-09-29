@@ -8,6 +8,12 @@ import os
 class BasicBlock(tf.keras.Model):
     def __init__(self, in_channels, out_channels, strides=1):
         super(BasicBlock, self).__init__()
+        
+        # 保存构造参数用于序列化
+        self.in_channels_config = in_channels
+        self.out_channels_config = out_channels
+        self.strides_config = strides
+        
         self.conv1 = tf.keras.layers.Conv2D(
             out_channels,
             kernel_size=3,
@@ -67,11 +73,34 @@ class BasicBlock(tf.keras.Model):
             
         return out
 
+    def get_config(self):
+        """返回模型配置，用于序列化"""
+        config = super().get_config()
+        config.update({
+            'in_channels': self.in_channels_config,
+            'out_channels': self.out_channels_config,
+            'strides': self.strides_config
+        })
+        return config
+
+    @classmethod
+    def from_config(cls, config):
+        """从配置重建模型"""
+        in_channels = config.pop('in_channels')
+        out_channels = config.pop('out_channels')
+        strides = config.pop('strides', 1)
+        return cls(in_channels, out_channels, strides)
+
 
 class ResNet(tf.keras.Model):
     def __init__(self, block, num_blocks, num_classes=10):  # 修改默认类别数
         super(ResNet, self).__init__()
         self.in_channels = 64  # 修复初始通道数
+        
+        # 保存构造参数用于序列化
+        self.block_class = block
+        self.num_blocks_config = num_blocks
+        self.num_classes_config = num_classes
 
         self.conv1 = tf.keras.layers.Conv2D(
             64,
@@ -111,6 +140,35 @@ class ResNet(tf.keras.Model):
         out = self.avg_pool2d(out)
         out = self.linear(out)
         return out
+
+    def get_config(self):
+        """返回模型配置，用于序列化"""
+        config = super().get_config()
+        
+        # 获取block类型名称
+        block_type = getattr(self.block_class, '__name__', 'BasicBlock')
+        
+        config.update({
+            'block_type': block_type,
+            'num_blocks': self.num_blocks_config,
+            'num_classes': self.num_classes_config,
+            'in_channels': 64  # 初始通道数（固定值）
+        })
+        return config
+
+    @classmethod
+    def from_config(cls, config):
+        """从配置重建模型"""
+        block_type = config.pop('block_type', 'BasicBlock')
+        num_blocks = config.pop('num_blocks', [2, 2, 2, 2])
+        num_classes = config.pop('num_classes', 10)
+        config.pop('in_channels', None)  # 移除不需要的配置项
+        
+        # 目前只支持BasicBlock
+        if block_type == 'BasicBlock':
+            return cls(BasicBlock, num_blocks, num_classes)
+        else:
+            raise ValueError(f"不支持的block类型: {block_type}")
 
 
 def ResNet18(num_classes=10):
@@ -456,7 +514,7 @@ def train_resnet():
     history = model.fit(
         train_datagen.flow(x_train, y_train, batch_size=128),
         steps_per_epoch=len(x_train) // 128,
-        epochs=100,
+        epochs=1,
         validation_data=(x_test, y_test),
         callbacks=callbacks,
         verbose=1
