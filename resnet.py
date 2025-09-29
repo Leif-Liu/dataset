@@ -236,16 +236,21 @@ def save_model(model, model_name):
         import tf2onnx
         onnx_path = os.path.join(save_dir, f"{model_name}.onnx")
         
-        # 创建具体函数用于转换
-        concrete_func = model.call.get_concrete_function(
-            tf.TensorSpec(shape=(None, 32, 32, 3), dtype=tf.float32)
+        # 使用from_keras方法进行ONNX转换
+        # 首先确保模型已经构建
+        dummy_input = tf.random.normal((1, 32, 32, 3))
+        _ = model(dummy_input, training=False)
+        
+        # 定义输入规格
+        spec = (tf.TensorSpec((None, 32, 32, 3), tf.float32, name="input"),)
+        
+        # 直接从Keras模型转换为ONNX
+        tf2onnx.convert.from_keras(
+            model,
+            input_signature=spec,
+            output_path=onnx_path
         )
         
-        tf2onnx.convert.from_function(
-            concrete_func,
-            output_path=onnx_path,
-            input_signature=[tf.TensorSpec(shape=(None, 32, 32, 3), dtype=tf.float32)]
-        )
         print(f"✓ ONNX格式已保存到: {onnx_path}")
     except ImportError:
         print("⚠ tf2onnx未安装，跳过ONNX格式导出")
