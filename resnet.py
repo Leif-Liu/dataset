@@ -239,10 +239,84 @@ def save_model(model, model_name):
     if not os.path.exists(save_dir):
         os.makedirs(save_dir)
     
-    # 1. 保存完整模型（推荐格式）- SavedModel格式
+    # 1. 保存完整模型（推荐格式）- SavedModel格式（为Netron优化）
     savedmodel_path = os.path.join(save_dir, f"{model_name}_savedmodel")
-    model.save(savedmodel_path, save_format='tf')
-    print(f"✓ SavedModel格式已保存到: {savedmodel_path}")
+    
+    # 为子类化模型创建明确的输入签名，确保Netron能正确解析
+    try:
+        # 确保模型已经构建
+        dummy_input = tf.random.normal((1, 32, 32, 3))
+        _ = model(dummy_input, training=False)
+        
+        # 创建具体的推理函数
+        @tf.function
+        def inference_func(x):
+            return model(x, training=False)
+        
+        # 获取concrete function并指定输入签名
+        concrete_func = inference_func.get_concrete_function(
+            tf.TensorSpec(shape=(None, 32, 32, 3), dtype=tf.float32, name='input_image')
+        )
+        
+        # 首先保存标准的Keras SavedModel（包含元数据）
+        model.save(savedmodel_path, save_format='tf')
+        print(f"✓ SavedModel格式已保存到: {savedmodel_path}")
+        print(f"  ✓ 包含Keras元数据，可用tf.keras.models.load_model加载")
+        
+        # 另外保存Netron优化版本（使用固定batch size展开计算图）
+        netron_path = os.path.join(save_dir, f"{model_name}_netron_savedmodel")
+        
+        # 创建固定batch size的推理函数（这样能完全展开计算图）
+        @tf.function
+        def fixed_inference_func(x):
+            return model(x, training=False)
+        
+        # 使用固定形状的输入（batch_size=1）来完全展开图
+        fixed_concrete_func = fixed_inference_func.get_concrete_function(
+            tf.TensorSpec(shape=(1, 32, 32, 3), dtype=tf.float32, name='input_image')
+        )
+        
+        tf.saved_model.save(
+            model, 
+            netron_path,
+            signatures={
+                'serving_default': fixed_concrete_func,
+                'inference': fixed_concrete_func
+            }
+        )
+        print(f"✓ Netron优化版本已保存到: {netron_path}")
+        print(f"  ✓ 使用固定batch size展开计算图，适合Netron可视化")
+        
+        # 额外创建冻结图版本（最适合Netron）
+        try:
+            frozen_path = os.path.join(save_dir, f"{model_name}_frozen.pb")
+            
+            # 获取具体的函数
+            full_model = tf.function(lambda x: model(x, training=False))
+            full_model = full_model.get_concrete_function(
+                tf.TensorSpec(shape=(1, 32, 32, 3), dtype=tf.float32)
+            )
+            
+            # 冻结图
+            from tensorflow.python.framework.convert_to_constants import convert_variables_to_constants_v2
+            frozen_func = convert_variables_to_constants_v2(full_model)
+            
+            # 保存冻结的图
+            tf.io.write_graph(graph_or_graph_def=frozen_func.graph,
+                            logdir=save_dir,
+                            name=f"{model_name}_frozen.pb",
+                            as_text=False)
+            
+            print(f"✓ 冻结图已保存到: {frozen_path}")
+            print(f"  ✓ 这是最适合Netron可视化的格式")
+            
+        except Exception as e:
+            print(f"⚠ 冻结图保存失败: {e}")
+        
+    except Exception as e:
+        print(f"⚠ 签名保存失败，使用标准方式: {e}")
+        model.save(savedmodel_path, save_format='tf')
+        print(f"✓ SavedModel格式已保存到: {savedmodel_path}")
     
     # 2. 保存为Keras原生格式（推荐替代H5）
     keras_path = os.path.join(save_dir, f"{model_name}.keras")
