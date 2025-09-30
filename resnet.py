@@ -3,6 +3,7 @@ import numpy as np
 from tensorflow.keras import datasets, layers, optimizers, losses, metrics
 import matplotlib.pyplot as plt
 import os
+from tensorflow.python.framework.convert_to_constants import convert_variables_to_constants_v2
 
 
 class BasicBlock(tf.keras.Model):
@@ -223,7 +224,6 @@ def plot_training_history(history):
     plt.tight_layout()
     plt.show()
 
-
 def save_model(model, model_name):
     """
     保存训练好的模型到多种格式
@@ -242,81 +242,116 @@ def save_model(model, model_name):
     # 1. 保存完整模型（推荐格式）- SavedModel格式（为Netron优化）
     savedmodel_path = os.path.join(save_dir, f"{model_name}_savedmodel")
     
-    # 为子类化模型创建明确的输入签名，确保Netron能正确解析
+    # 确保模型已经构建
+    dummy_input = tf.random.normal((1, 32, 32, 3))
+    _ = model(dummy_input, training=False)
+    
     try:
-        # 确保模型已经构建
-        dummy_input = tf.random.normal((1, 32, 32, 3))
-        _ = model(dummy_input, training=False)
-        
-        # 创建具体的推理函数
-        @tf.function
-        def inference_func(x):
-            return model(x, training=False)
-        
-        # 获取concrete function并指定输入签名
-        concrete_func = inference_func.get_concrete_function(
-            tf.TensorSpec(shape=(None, 32, 32, 3), dtype=tf.float32, name='input_image')
-        )
-        
         # 首先保存标准的Keras SavedModel（包含元数据）
         model.save(savedmodel_path, save_format='tf')
         print(f"✓ SavedModel格式已保存到: {savedmodel_path}")
         print(f"  ✓ 包含Keras元数据，可用tf.keras.models.load_model加载")
         
-        # 另外保存Netron优化版本（使用固定batch size展开计算图）
-        netron_path = os.path.join(save_dir, f"{model_name}_netron_savedmodel")
+        # 创建冻结图版本（最适合Netron可视化）
+        frozen_path = os.path.join(save_dir, f"{model_name}_frozen.pb")
         
-        # 创建固定batch size的推理函数（这样能完全展开计算图）
+        # 定义 tf.function 并绑定固定输入签名
         @tf.function
-        def fixed_inference_func(x):
+        def inference_func(x):
             return model(x, training=False)
         
-        # 使用固定形状的输入（batch_size=1）来完全展开图
-        fixed_concrete_func = fixed_inference_func.get_concrete_function(
-            tf.TensorSpec(shape=(1, 32, 32, 3), dtype=tf.float32, name='input_image')
+        # 获取具体函数，使用固定形状以获得更清晰的图结构
+        concrete_func = inference_func.get_concrete_function(
+            tf.TensorSpec(shape=(1, 32, 32, 3), dtype=tf.float32, name="input_image")
         )
         
-        tf.saved_model.save(
-            model, 
-            netron_path,
-            signatures={
-                'serving_default': fixed_concrete_func,
-                'inference': fixed_concrete_func
-            }
+        # 转为冻结图（变量→常量），禁用某些优化以保持结构清晰
+        frozen_func = convert_variables_to_constants_v2(
+            concrete_func,
+            lower_control_flow=True,  # 简化控制流
+            aggressive_inlining=False  # 禁用激进内联以保持层结构
         )
-        print(f"✓ Netron优化版本已保存到: {netron_path}")
-        print(f"  ✓ 使用固定batch size展开计算图，适合Netron可视化")
         
-        # 额外创建冻结图版本（最适合Netron）
+        # 可选：进一步优化图结构以减少Identity节点
+        from tensorflow.python.tools import optimize_for_inference_lib
         try:
-            frozen_path = os.path.join(save_dir, f"{model_name}_frozen.pb")
+            # 获取输入和输出节点名称
+            input_node_names = [node.name for node in frozen_func.graph.as_graph_def().node if node.op == 'Placeholder']
+            output_node_names = [frozen_func.outputs[0].name.split(':')[0]]
             
-            # 获取具体的函数
-            full_model = tf.function(lambda x: model(x, training=False))
-            full_model = full_model.get_concrete_function(
-                tf.TensorSpec(shape=(1, 32, 32, 3), dtype=tf.float32)
+            # 优化推理图
+            optimized_graph_def = optimize_for_inference_lib.optimize_for_inference(
+                frozen_func.graph.as_graph_def(),
+                input_node_names,
+                output_node_names,
+                tf.uint8.as_datatype_enum if model.dtype == tf.uint8 else tf.float32.as_datatype_enum
             )
             
-            # 冻结图
-            from tensorflow.python.framework.convert_to_constants import convert_variables_to_constants_v2
-            frozen_func = convert_variables_to_constants_v2(full_model)
+            # 保存优化后的图
+            tf.io.write_graph(
+                optimized_graph_def,
+                save_dir,
+                f"{model_name}_frozen.pb",
+                as_text=False
+            )
+            print(f"✓ 优化冻结图已保存到: {frozen_path}")
             
-            # 保存冻结的图
-            tf.io.write_graph(graph_or_graph_def=frozen_func.graph,
-                            logdir=save_dir,
-                            name=f"{model_name}_frozen.pb",
-                            as_text=False)
+        except Exception as opt_e:
+            print(f"⚠ 图优化失败，使用标准冻结图: {opt_e}")
+            # 回退到标准冻结图
+            tf.io.write_graph(
+                frozen_func.graph.as_graph_def(),
+                save_dir,
+                f"{model_name}_frozen.pb",
+                as_text=False
+            )
+            print(f"✓ 标准冻结图已保存到: {frozen_path}")
+        
+        # 额外保存一个简化版本，专为Netron优化
+        try:
+            simple_frozen_path = os.path.join(save_dir, f"{model_name}_simple_frozen.pb")
             
-            print(f"✓ 冻结图已保存到: {frozen_path}")
-            print(f"  ✓ 这是最适合Netron可视化的格式")
+            # 创建最简单的推理图
+            @tf.function(experimental_relax_shapes=True)
+            def simple_inference(x):
+                return model(x, training=False)
+            
+            simple_concrete = simple_inference.get_concrete_function(
+                tf.TensorSpec([1, 32, 32, 3], tf.float32, name="input")
+            )
+            
+            # 最小化的图转换
+            simple_frozen = convert_variables_to_constants_v2(simple_concrete)
+            
+            # 移除多余节点的图定义
+            graph_def = simple_frozen.graph.as_graph_def()
+            
+            # 手动清理一些冗余节点
+            from tensorflow.python.framework import graph_util
+            optimized_graph = graph_util.remove_training_nodes(graph_def)
+            
+            tf.io.write_graph(
+                optimized_graph,
+                save_dir,
+                f"{model_name}_simple_frozen.pb",
+                as_text=False
+            )
+            print(f"✓ 简化冻结图已保存到: {simple_frozen_path}")
+            print(f"  ✓ 专为Netron优化，减少Identity节点")
             
         except Exception as e:
-            print(f"⚠ 冻结图保存失败: {e}")
+            print(f"⚠ 简化版本保存失败: {e}")
+        
+        print(f"  ✓ 适合在 Netron 中可视化 (Conv2D / BN / ReLU / Add 节点可见)")
         
     except Exception as e:
-        print(f"⚠ 签名保存失败，使用标准方式: {e}")
-        model.save(savedmodel_path, save_format='tf')
-        print(f"✓ SavedModel格式已保存到: {savedmodel_path}")
+        print(f"⚠ 模型保存失败: {e}")
+        # 回退到基本保存方式
+        try:
+            model.save(savedmodel_path, save_format='tf')
+            print(f"✓ 基本SavedModel已保存到: {savedmodel_path}")
+        except Exception as e2:
+            print(f"❌ 基本保存也失败: {e2}")
     
     # 2. 保存为Keras原生格式（推荐替代H5）
     keras_path = os.path.join(save_dir, f"{model_name}.keras")
@@ -588,7 +623,7 @@ def train_resnet():
     history = model.fit(
         train_datagen.flow(x_train, y_train, batch_size=128),
         steps_per_epoch=len(x_train) // 128,
-        epochs=1,
+        epochs=100,
         validation_data=(x_test, y_test),
         callbacks=callbacks,
         verbose=1
@@ -632,7 +667,7 @@ def simple_train_example():
     history = model.fit(
         x_train, y_train,
         batch_size=128,
-        epochs=2,  # 较少的epoch用于快速测试
+        epochs=100,  # 较少的epoch用于快速测试
         validation_data=(x_test, y_test),
         verbose=1
     )
