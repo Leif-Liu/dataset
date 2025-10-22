@@ -27,7 +27,7 @@ from ragflow_sdk import RAGFlow, Agent
 
 # ==================== Config ====================
 SAMPLE_RATE = 16000
-DEFAULT_CAPTURE_SECONDS = 60
+DEFAULT_CAPTURE_SECONDS = 70
 
 # LLM (local deployment)
 LLM_MODEL = "openai-mirror/gpt-oss-120b"
