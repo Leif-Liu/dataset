@@ -27,7 +27,7 @@ from ragflow_sdk import RAGFlow, Agent
 
 # ==================== Config ====================
 SAMPLE_RATE = 16000
-DEFAULT_CAPTURE_SECONDS = 20
+DEFAULT_CAPTURE_SECONDS = 60
 
 # LLM (local deployment)
 LLM_MODEL = "openai-mirror/gpt-oss-120b"
@@ -46,7 +46,7 @@ WHISPER_MODEL_NAME = "large"
 # RAGFlow connection config (standalone; do not import from other files)
 RAG_API_KEY = "ragflow-g1ZGRhNjQyNTYzZTExZjA4ZjZiODY2Nj"
 RAG_BASE_URL = "http://10.10.11.7:9380"
-RAG_AGENT_ID = "673a2bda7bf911f0a13f2e823edec181"
+RAG_AGENT_ID = "a49a6e78ae6611f0a6ff9eec5b87b5d8"
 
 
 # ==================== Utilities ====================
@@ -149,7 +149,38 @@ class RAGFlowClient:
         cont = ""
         try:
             for ans in self.session.ask(question, stream=True):
-                cont = ans.content
+                # 兼容不同字段：content / delta / text
+                text = getattr(ans, "content", None) or getattr(ans, "delta", None) or getattr(ans, "text", None)
+                if text is None:
+                    try:
+                        text = ans.get("content") or ans.get("delta") or ans.get("text")
+                    except Exception:
+                        text = None
+                if not text:
+                    continue
+                # 打印增量
+                if isinstance(text, str) and cont and text.startswith(cont):
+                    print(text[len(cont):], end='', flush=True)
+                else:
+                    print(text or "", end='', flush=True)
+                cont = text if isinstance(text, str) else (cont or "")
+
+            # 流式没有拿到任何内容时，尝试非流式一次
+            if not cont:
+                resp = self.session.ask(question, stream=False)
+                text = None
+                if isinstance(resp, str):
+                    text = resp
+                else:
+                    text = getattr(resp, "content", None) or getattr(resp, "delta", None) or getattr(resp, "text", None)
+                    if text is None:
+                        try:
+                            text = resp.get("content") or resp.get("delta") or resp.get("text")
+                        except Exception:
+                            text = None
+                if text:
+                    print(text, end='', flush=True)
+                    cont = text
         except Exception as e:
             print(f"RAGFlow检索失败: {e}")
             return ""
@@ -290,6 +321,8 @@ def run_demo(question: str, capture_seconds: int = DEFAULT_CAPTURE_SECONDS, answ
     print("\n[1/3] 正在检索 RAG 上下文...")
     rag_context = rag_client.fetch_context(question)
     rag_elapsed = f"{time.time() - rag_start:.2f}秒"
+    print("RAG 检索内容：")
+    print(rag_context)
     print("RAG 检索完成。")
 
     # Step 2: Capture and transcribe answer
@@ -360,7 +393,7 @@ def main():
     args = parser.parse_args()
 
     print("\n===== 面试评估 Demo =====")
-    default_question = "请解释 Transformer 中自注意力机制的工作原理，并比较多头注意力的优势。"
+    default_question = "Explain how the self-attention mechanism works in Transformers and describe the advantages of multi-head attention."
 
     question = args.question.strip()
     if not question:
