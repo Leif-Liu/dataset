@@ -1,0 +1,45 @@
+defaults:
+  - _self_
+
+seed: 42
+output_dir: outputs/ppo
+
+policy:
+  # PPO 策略初始模型：通常用 SFT 的 checkpoint
+  name_or_path: outputs/sft
+  trust_remote_code: true
+  torch_dtype: auto
+
+reward:
+  # 奖励模型：reward.py 的输出目录
+  name_or_path: outputs/reward
+  trust_remote_code: true
+  torch_dtype: auto
+
+data:
+  # PPO 只需要 prompt（从 SFT 文件里抽 prompt 也行）
+  prompts_file: data/examples/sft_sample.jsonl
+  prompt_key: prompt
+  template: "### User:\n{prompt}\n\n### Assistant:\n"
+
+tokenizer:
+  max_prompt_length: 512
+  max_new_tokens: 128
+  padding_side: left
+
+ppo:
+  # 你给的经验：最优在 0.01-0.02
+  kl_coef: 0.015
+  learning_rate: 1.0e-6
+  batch_size: 4
+  mini_batch_size: 1
+  gradient_accumulation_steps: 1
+  total_episodes: 200
+  log_with: null   # null|wandb|tensorboard（取决于你环境是否安装/配置）
+
+generation:
+  do_sample: true
+  top_p: 0.9
+  temperature: 0.8
+
+

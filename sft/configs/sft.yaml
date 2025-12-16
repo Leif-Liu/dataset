@@ -1,0 +1,58 @@
+defaults:
+  - _self_
+
+seed: 42
+output_dir: outputs/sft
+
+model:
+  name_or_path: gpt2
+  trust_remote_code: true
+  torch_dtype: auto   # auto|float16|bfloat16|float32
+  use_flash_attn_2: false
+
+data:
+  train_file: data/examples/sft_sample.jsonl
+  eval_file: null
+  prompt_key: prompt
+  completion_key: completion
+  template: "### User:\n{prompt}\n\n### Assistant:\n"
+
+tokenizer:
+  padding_side: right
+  truncation: true
+  max_length: 2048
+
+sft:
+  train_on_prompt: false
+  add_eos_token: true
+
+train:
+  # 训练稳定性经验：>8.05e-6 容易发散；建议 <= 8e-6
+  learning_rate: 8e-6
+  weight_decay: 0.0
+  warmup_ratio: 0.03
+  lr_scheduler_type: cosine
+
+  per_device_train_batch_size: 1
+  per_device_eval_batch_size: 1
+  gradient_accumulation_steps: 8
+
+  num_train_epochs: 1
+  max_steps: 200
+  logging_steps: 10
+  save_steps: 100
+  eval_steps: 0
+
+  bf16: true
+  fp16: false
+  gradient_checkpointing: true
+
+  # Transformers Trainer 内直接传 deepspeed 配置路径即可启用 ZeRO
+  deepspeed_config: configs/deepspeed/zero2.json
+
+wandb:
+  enabled: false
+  project: sft-demo
+  run_name: null
+
+
