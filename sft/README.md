@@ -40,6 +40,51 @@ pip install -r requirements.txt
 
 ---
 
+## 1.3 启用 Weights & Biases（wandb）
+
+### 1.3.1 登录/注册在哪里做？
+
+wandb 的“注册/登录”不在本工程代码里做，而是在你**本机环境**里完成一次授权即可：
+
+- **方式 A（推荐）**：执行一次 `wandb login`，按提示粘贴你申请到的 API Key
+
+```bash
+conda activate sft
+wandb login
+```
+
+- **方式 B（CI/服务器更方便）**：设置环境变量 `WANDB_API_KEY`
+
+```bash
+export WANDB_API_KEY="你的key"
+```
+
+> 不建议把 key 写进仓库文件（如 `launch.json` / `yaml`），避免泄露。
+
+### 1.3.2 如何在训练里打开？
+
+你可以用两种方式开启：
+
+- **改配置文件**：把 `configs/sft.yaml` 里的 `wandb.enabled` 改为 `true`
+- **命令行覆盖**（推荐）：不改文件，直接覆盖参数
+
+```bash
+python -m training.sft \
+  wandb.enabled=true \
+  wandb.project=sft \
+  wandb.run_name=my-run \
+  model.name_or_path=Qwen/Qwen2.5-0.5B-Instruct \
+  data.train_file=data/examples/sft_sample.jsonl \
+  output_dir=outputs/sft-qwen05b-lora \
+  peft.enabled=true \
+  train.deepspeed_config=null \
+  train.max_steps=50
+```
+
+本工程在开启 wandb 时会设置 `WANDB_PROJECT`（你也可以自己额外设置 `WANDB_ENTITY` 等）。
+
+---
+
 ## 2. 数据格式
 
 ### 2.1 SFT 数据（jsonl）

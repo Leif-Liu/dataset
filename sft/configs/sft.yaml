@@ -61,8 +61,8 @@ train:
   deepspeed_config: configs/deepspeed/zero2.json
 
 wandb:
-  enabled: false
-  project: sft-demo
+  enabled: true
+  project: sft
   run_name: null
 
 
