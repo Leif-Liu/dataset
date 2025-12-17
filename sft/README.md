@@ -14,7 +14,21 @@
 
 ## 1. 安装依赖
 
-在该目录下：
+在该目录下任选一种方式即可：
+
+### 1.1 使用 conda（推荐）
+
+```bash
+cd /home/liufeng/sdk-ragflow/sft
+
+conda create -n sft python=3.10 -y
+conda activate sft
+
+pip install -U pip
+pip install -r requirements.txt
+```
+
+### 1.2 使用 venv
 
 ```bash
 cd /home/liufeng/sdk-ragflow/sft
@@ -54,6 +68,24 @@ pip install -r requirements.txt
 
 ### 3.1 SFT（建议 DeepSpeed）
 
+如果你想最“标准”的方式启用 DeepSpeed（推荐），用它的 launcher 启动：
+
+```bash
+cd /home/liufeng/sdk-ragflow/sft
+
+deepspeed --num_gpus=1 -m training.sft \
+  model.name_or_path=Qwen/Qwen2.5-0.5B-Instruct \
+  data.train_file=data/examples/sft_sample.jsonl \
+  output_dir=outputs/sft-qwen05b \
+  train.learning_rate=8e-6 \
+  train.per_device_train_batch_size=1 \
+  train.gradient_accumulation_steps=8 \
+  train.max_steps=50 \
+  train.deepspeed_config=configs/deepspeed/zero2.json
+```
+
+你也可以继续使用 `python -m training.sft ...`（本工程已在单进程场景下自动避免 DeepSpeed 的 MPI 依赖）。
+
 ```bash
 cd /home/liufeng/sdk-ragflow/sft
 
@@ -66,6 +98,22 @@ python -m training.sft \
   train.gradient_accumulation_steps=8 \
   train.max_steps=50 \
   train.deepspeed_config=configs/deepspeed/zero2.json
+```
+
+如果遇到 **CUDA OOM（显存不足）**，在单机单卡场景下更推荐开启 **LoRA**（只训练少量 adapter 参数），并关闭 deepspeed：
+
+```bash
+cd /home/liufeng/sdk-ragflow/sft
+
+python -m training.sft \
+  model.name_or_path=Qwen/Qwen2.5-0.5B-Instruct \
+  data.train_file=data/examples/sft_sample.jsonl \
+  output_dir=outputs/sft-qwen05b-lora \
+  peft.enabled=true \
+  train.deepspeed_config=null \
+  train.per_device_train_batch_size=1 \
+  train.gradient_accumulation_steps=8 \
+  train.max_steps=50
 ```
 
 > 训练稳定性经验：学习率建议 **≤ 8e-6**（你提供的知识库发现：高于 `8.05e-6` 易发散）。

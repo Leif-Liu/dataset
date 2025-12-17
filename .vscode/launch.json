@@ -301,6 +301,44 @@
             "args": [],
             "stopOnEntry": false,
             "preLaunchTask": ""
+        },
+        {
+            "name": "SFT Debug: training.sft (conda: sft)",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "training.sft",
+            "console": "integratedTerminal",
+            "python": "/home/liufeng/miniconda3/envs/sft/bin/python",
+            "env": {
+                "CONDA_DEFAULT_ENV": "sft",
+                "CONDA_PREFIX": "/home/liufeng/miniconda3/envs/sft",
+                "CONDA_PREFIX_1": "/home/liufeng/miniconda3",
+                "CONDA_PYTHON_EXE": "/home/liufeng/miniconda3/bin/python",
+                "CONDA_EXE": "/home/liufeng/miniconda3/bin/conda",
+                "PATH": "/home/liufeng/miniconda3/envs/sft/bin:/home/liufeng/miniconda3/condabin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin",
+                "HYDRA_FULL_ERROR": "1"
+            },
+            "justMyCode": false,
+            "debugStdLib": true,
+            "pathMappings": [
+                {
+                    "localRoot": "/home/liufeng/miniconda3/envs/sft/lib/python3.10/site-packages",
+                    "remoteRoot": "/home/liufeng/miniconda3/envs/sft/lib/python3.10/site-packages"
+                }
+            ],
+            "cwd": "${workspaceFolder}/sft",
+            "args": [
+                "model.name_or_path=Qwen/Qwen2.5-0.5B-Instruct",
+                "data.train_file=data/examples/sft_sample.jsonl",
+                "output_dir=outputs/sft-qwen05b-lora",
+                "peft.enabled=true",
+                "train.deepspeed_config=null",
+                "train.per_device_train_batch_size=1",
+                "train.gradient_accumulation_steps=8",
+                "train.max_steps=50"
+            ],
+            "stopOnEntry": false,
+            "subProcess": false
         }
     ]
 }

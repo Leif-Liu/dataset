@@ -26,6 +26,16 @@ sft:
   train_on_prompt: false
   add_eos_token: true
 
+peft:
+  # 显存不够时强烈建议开启 LoRA，只训练少量 adapter 参数
+  enabled: false
+  r: 8
+  lora_alpha: 16
+  lora_dropout: 0.05
+  bias: none
+  # 适配大多数 LLaMA/Qwen 类架构；如不匹配可在命令行覆盖
+  target_modules: ["q_proj","k_proj","v_proj","o_proj","gate_proj","up_proj","down_proj"]
+
 train:
   # 训练稳定性经验：>8.05e-6 容易发散；建议 <= 8e-6
   learning_rate: 8e-6

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import inspect
 from typing import Any
 
 import hydra
@@ -46,6 +47,19 @@ def _dtype_from_cfg(v: str):
         "float32": torch.float32,
     }
     return m.get(v, "auto")
+
+def _set_eval_strategy_kwargs(evaluation_strategy_value: str) -> dict[str, Any]:
+    """
+    Transformers 版本兼容：
+    - evaluation_strategy（旧）
+    - eval_strategy（新）
+    """
+    params = inspect.signature(TrainingArguments.__init__).parameters
+    if "evaluation_strategy" in params:
+        return {"evaluation_strategy": evaluation_strategy_value}
+    if "eval_strategy" in params:
+        return {"eval_strategy": evaluation_strategy_value}
+    return {}
 
 
 def _import_reward_trainer():
@@ -150,7 +164,7 @@ def main(cfg: DictConfig) -> None:
         fp16=bool(cfg.train.fp16),
         report_to=report_to,
         run_name=run_name,
-        evaluation_strategy="no",
+        **_set_eval_strategy_kwargs("no"),
         save_total_limit=3,
         logging_first_step=True,
         remove_unused_columns=False,

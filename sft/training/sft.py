@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import os
 from dataclasses import dataclass
+import inspect
+import socket
 from typing import Any
 
 import hydra
@@ -55,6 +57,56 @@ def _dtype_from_cfg(v: str):
     }
     return m.get(v, "auto")
 
+def _set_eval_strategy_kwargs(
+    evaluation_strategy_value: str,
+    eval_steps_value: int | None,
+) -> dict[str, Any]:
+    """
+    Transformers 不同版本参数名不一致：
+    - 旧版本：evaluation_strategy
+    - 新版本：eval_strategy
+    这里做一次运行时兼容。
+    """
+    params = inspect.signature(TrainingArguments.__init__).parameters
+    kwargs: dict[str, Any] = {}
+    if "evaluation_strategy" in params:
+        kwargs["evaluation_strategy"] = evaluation_strategy_value
+    elif "eval_strategy" in params:
+        kwargs["eval_strategy"] = evaluation_strategy_value
+    else:
+        # 极端情况：都没有，就不设置
+        pass
+
+    if eval_steps_value is not None and "eval_steps" in params:
+        kwargs["eval_steps"] = eval_steps_value
+    return kwargs
+
+
+def _pick_free_port() -> int:
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        s.bind(("127.0.0.1", 0))
+        return int(s.getsockname()[1])
+
+
+def _ensure_single_process_dist_env_for_deepspeed(enabled: bool) -> None:
+    """
+    当你在单机单进程里直接 `python -m training.sft` 并开启 deepspeed 时，
+    DeepSpeed 可能尝试 MPI discovery（进而依赖 mpi4py）。
+
+    这里在“明显是单进程启动”的情况下补齐分布式环境变量，避免走 MPI discovery。
+    """
+    if not enabled:
+        return
+    if "LOCAL_RANK" in os.environ or "RANK" in os.environ or "WORLD_SIZE" in os.environ:
+        return
+    os.environ.setdefault("LOCAL_RANK", "0")
+    os.environ.setdefault("RANK", "0")
+    os.environ.setdefault("WORLD_SIZE", "1")
+    os.environ.setdefault("MASTER_ADDR", "127.0.0.1")
+    os.environ.setdefault("MASTER_PORT", str(_pick_free_port()))
+    # 即使 DeepSpeed 版本不识别也无害；识别的话可明确禁用 MPI
+    os.environ.setdefault("DEEPSPEED_NO_MPI", "1")
+
 
 @hydra.main(version_base=None, config_path="../configs", config_name="sft")
 def main(cfg: DictConfig) -> None:
@@ -78,6 +130,49 @@ def main(cfg: DictConfig) -> None:
         trust_remote_code=bool(cfg.model.trust_remote_code),
         torch_dtype=torch_dtype,
     )
+
+    # ===== Optional: LoRA (PEFT) to reduce VRAM/optimizer state =====
+    if "peft" in cfg and bool(cfg.peft.enabled):
+        try:
+            from peft import LoraConfig, get_peft_model  # type: ignore
+        except Exception as e:
+            raise RuntimeError(
+                "PEFT is required for peft.enabled=true. Please `pip install peft`."
+            ) from e
+
+        lora_cfg = LoraConfig(
+            r=int(cfg.peft.r),
+            lora_alpha=int(cfg.peft.lora_alpha),
+            lora_dropout=float(cfg.peft.lora_dropout),
+            bias=str(cfg.peft.bias),
+            task_type="CAUSAL_LM",
+            target_modules=list(cfg.peft.target_modules),
+        )
+        model = get_peft_model(model, lora_cfg)
+        try:
+            model.print_trainable_parameters()
+        except Exception:
+            pass
+
+        # 关键：LoRA + gradient checkpointing 时，需要确保输入 embedding 输出 requires_grad=True，
+        # 否则 torch.utils.checkpoint 会警告并导致 loss 无法反传梯度。
+        if bool(cfg.train.gradient_checkpointing):
+            if hasattr(model, "enable_input_require_grads"):
+                try:
+                    model.enable_input_require_grads()
+                except Exception:
+                    pass
+            else:
+                try:
+                    emb = model.get_input_embeddings()
+
+                    def _make_output_require_grad(_module, _inp, out):
+                        if isinstance(out, torch.Tensor):
+                            out.requires_grad_(True)
+
+                    emb.register_forward_hook(_make_output_require_grad)
+                except Exception:
+                    pass
 
     if bool(cfg.train.gradient_checkpointing):
         model.gradient_checkpointing_enable()
@@ -143,6 +238,7 @@ def main(cfg: DictConfig) -> None:
     deepspeed_config = str(cfg.train.deepspeed_config) if cfg.train.deepspeed_config else None
     if deepspeed_config:
         deepspeed_config = to_absolute_path(deepspeed_config)
+    _ensure_single_process_dist_env_for_deepspeed(enabled=bool(deepspeed_config))
 
     args = TrainingArguments(
         output_dir=output_dir,
@@ -163,8 +259,10 @@ def main(cfg: DictConfig) -> None:
         deepspeed=deepspeed_config,
         report_to=report_to,
         run_name=run_name,
-        evaluation_strategy=("steps" if eval_ds is not None and int(cfg.train.eval_steps) > 0 else "no"),
-        eval_steps=(int(cfg.train.eval_steps) if eval_ds is not None else None),
+        **_set_eval_strategy_kwargs(
+            evaluation_strategy_value=("steps" if eval_ds is not None and int(cfg.train.eval_steps) > 0 else "no"),
+            eval_steps_value=(int(cfg.train.eval_steps) if eval_ds is not None else None),
+        ),
         save_total_limit=3,
         logging_first_step=True,
         remove_unused_columns=False,
