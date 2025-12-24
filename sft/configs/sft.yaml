@@ -60,6 +60,11 @@ train:
   # Transformers Trainer 内直接传 deepspeed 配置路径即可启用 ZeRO
   deepspeed_config: configs/deepspeed/zero2.json
 
+  # ===== CUDA memory debug =====
+  log_cuda_mem: false
+  # 每隔多少个 step 打印一次；设为 1 可观察峰值波动
+  cuda_mem_log_steps: 1
+
 wandb:
   enabled: true
   project: sft

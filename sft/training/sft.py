@@ -4,6 +4,7 @@ import os
 from dataclasses import dataclass
 import inspect
 import socket
+import sys
 from typing import Any
 
 import hydra
@@ -16,10 +17,37 @@ from transformers import (
     Trainer,
     TrainingArguments,
 )
+from transformers.trainer_callback import TrainerCallback
 
 from data.loaders import load_sft_dataset
 from utils.seed import set_seed
 from utils.text import ensure_eos, format_prompt
+
+
+def _strip_launcher_args(argv: list[str]) -> list[str]:
+    """
+    DeepSpeed / torchrun 常见会给 user_script 注入参数，例如：
+    - --local_rank=0
+    - --local_rank 0
+    Hydra 默认不认识这些参数，会直接报错。
+    """
+    cleaned: list[str] = []
+    skip_next = False
+    for i, a in enumerate(argv):
+        if skip_next:
+            skip_next = False
+            continue
+        if a.startswith("--local_rank=") or a.startswith("--node_rank="):
+            continue
+        if a in ("--local_rank", "--node_rank"):
+            skip_next = True
+            continue
+        cleaned.append(a)
+    return cleaned
+
+
+# 让 Hydra 看到的 argv 不包含 launcher 注入参数
+sys.argv = _strip_launcher_args(sys.argv)
 
 
 @dataclass
@@ -45,6 +73,41 @@ class CausalLMCollator:
         attention_mask = torch.nn.utils.rnn.pad_sequence(attention_mask, batch_first=True, padding_value=0)
 
         return {"input_ids": input_ids, "labels": labels, "attention_mask": attention_mask}
+
+
+def _format_bytes(n: int) -> str:
+    # show in MiB
+    return f"{n / (1024**2):.0f}MiB"
+
+
+class CudaMemCallback(TrainerCallback):
+    """
+    轻量级显存观测：在 step 开始重置 peak，在 step 结束打印 allocated/reserved/peak。
+    由于 backward/optimizer 的峰值可能发生在 step 内部，所以这里重点看 peak。
+    """
+
+    def __init__(self, every_n_steps: int = 1):
+        self.every_n_steps = max(1, int(every_n_steps))
+
+    def on_step_begin(self, args, state, control, **kwargs):
+        if not torch.cuda.is_available():
+            return
+        if state.global_step % self.every_n_steps != 0:
+            return
+        torch.cuda.reset_peak_memory_stats()
+
+    def on_step_end(self, args, state, control, **kwargs):
+        if not torch.cuda.is_available():
+            return
+        if state.global_step % self.every_n_steps != 0:
+            return
+        alloc = torch.cuda.memory_allocated()
+        reserved = torch.cuda.memory_reserved()
+        peak = torch.cuda.max_memory_allocated()
+        print(
+            f"[cuda_mem step={state.global_step}] "
+            f"allocated={_format_bytes(alloc)} reserved={_format_bytes(reserved)} peak={_format_bytes(peak)}"
+        )
 
 
 def _dtype_from_cfg(v: str):
@@ -276,6 +339,9 @@ def main(cfg: DictConfig) -> None:
         tokenizer=tokenizer,
         data_collator=CausalLMCollator(tokenizer),
     )
+
+    if bool(getattr(cfg.train, "log_cuda_mem", False)):
+        trainer.add_callback(CudaMemCallback(every_n_steps=int(getattr(cfg.train, "cuda_mem_log_steps", 1))))
 
     trainer.train()
     trainer.save_model(output_dir)

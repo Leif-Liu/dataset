@@ -113,12 +113,12 @@ python -m training.sft \
 
 ### 3.1 SFT（建议 DeepSpeed）
 
-如果你想最“标准”的方式启用 DeepSpeed（推荐），用它的 launcher 启动：
+如果你想最“标准”的方式启用 DeepSpeed（推荐），用它的 launcher 启动（注意：DeepSpeed 用 `--module`，不是 `-m`）：
 
 ```bash
 cd /home/liufeng/sdk-ragflow/sft
 
-deepspeed --num_gpus=1 -m training.sft \
+deepspeed --num_gpus=1 --module training.sft \
   model.name_or_path=Qwen/Qwen2.5-0.5B-Instruct \
   data.train_file=data/examples/sft_sample.jsonl \
   output_dir=outputs/sft-qwen05b \
@@ -126,8 +126,16 @@ deepspeed --num_gpus=1 -m training.sft \
   train.per_device_train_batch_size=1 \
   train.gradient_accumulation_steps=8 \
   train.max_steps=50 \
-  train.deepspeed_config=configs/deepspeed/zero2.json
+  train.deepspeed_config=configs/deepspeed/zero2.json \
+  train.log_cuda_mem=true  \
+  train.cuda_mem_log_steps=10 \
+  peft.enabled=true
 ```
+
+如果启动阶段报 NCCL 初始化错误（例如 `Failed to CUDA calloc async 4 bytes` / `ncclUnhandledCudaError`），优先排查：
+
+- GPU 是否被其它进程占满：先运行 `nvidia-smi`，结束无关进程后重试
+- 需要更详细日志：`export NCCL_DEBUG=INFO` 后重试
 
 你也可以继续使用 `python -m training.sft ...`（本工程已在单进程场景下自动避免 DeepSpeed 的 MPI 依赖）。
 
@@ -158,8 +166,27 @@ python -m training.sft \
   train.deepspeed_config=null \
   train.per_device_train_batch_size=1 \
   train.gradient_accumulation_steps=8 \
-  train.max_steps=50
+  train.max_steps=50  \
+  train.log_cuda_mem=true  \
+  train.cuda_mem_log_steps=1
 ```
+
+如果你想“实验/观测”训练过程里 **激活/临时张量** 的峰值显存（尤其是 backward/optimizer step 期间），可以打开显存日志：
+
+```bash
+python -m training.sft \
+  train.log_cuda_mem=true \
+  train.cuda_mem_log_steps=1 \
+  peft.enabled=true \
+  train.deepspeed_config=null \
+  model.name_or_path=Qwen/Qwen2.5-0.5B-Instruct \
+  data.train_file=data/examples/sft_sample.jsonl \
+  output_dir=outputs/sft-qwen05b-lora \
+  train.max_steps=10
+```
+
+控制台会打印类似：
+`[cuda_mem step=...] allocated=... reserved=... peak=...`，其中 **peak** 最接近你关心的“step 内峰值”（包含 backward/optimizer 引发的瞬时峰值）。
 
 > 训练稳定性经验：学习率建议 **≤ 8e-6**（你提供的知识库发现：高于 `8.05e-6` 易发散）。
 
