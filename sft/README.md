@@ -137,6 +137,44 @@ deepspeed --num_gpus=1 --module training.sft \
 - GPU 是否被其它进程占满：先运行 `nvidia-smi`，结束无关进程后重试
 - 需要更详细日志：`export NCCL_DEBUG=INFO` 后重试
 
+---
+
+## 单机 4×48GB（4090）训练 Qwen3-30B-A3B（建议）
+
+你这类机器（单机多卡、PCIe、无 IB）跑 30B 级别模型，建议：
+
+- **训练形态**：优先 **LoRA（PEFT）**（显存更稳）
+- **并行/显存优化**：用 **DeepSpeed ZeRO-3 + CPU offload**（见 `configs/deepspeed/zero3_offload.json`）
+- **先 smoke test**：`train.max_steps=1` 确认能初始化 + LoRA 生效（trainable params > 0），再逐步加大
+
+示例命令（单机 4 卡）：
+
+```bash
+cd /home/liufeng/sdk-ragflow/sft
+
+# 仅当你遇到 NCCL 相关异常时再打开这些（正常情况不需要）：
+# export NCCL_DEBUG=INFO
+# export NCCL_IB_DISABLE=1
+
+deepspeed --num_gpus=4 --module training.sft \
+  model.name_or_path=Qwen/Qwen3-30B-A3B-Thinking-2507 \
+  data.train_file=data/examples/sft_sample.jsonl \
+  output_dir=outputs/sft-qwen3-30b-a3b-lora \
+  peft.enabled=true \
+  peft.r=16 \
+  peft.lora_alpha=32 \
+  train.deepspeed_config=configs/deepspeed/zero3_offload.json \
+  train.per_device_train_batch_size=1 \
+  train.gradient_accumulation_steps=4 \
+  train.learning_rate=5e-6 \
+  train.max_steps=1
+```
+
+说明：
+
+- **有效 batch**：\(1 \times 4 \times 4 = 16\)（micro=1、accum=4、4卡），你可以按目标有效 batch 调整 `gradient_accumulation_steps`
+- **LoRA target_modules**：Qwen3 的模块命名可能与 Qwen2 不同；如果报 “no trainable parameters”，请覆盖 `peft.target_modules`（必要时用 `["all-linear"]`）
+
 你也可以继续使用 `python -m training.sft ...`（本工程已在单进程场景下自动避免 DeepSpeed 的 MPI 依赖）。
 
 ```bash

@@ -216,6 +216,20 @@ def main(cfg: DictConfig) -> None:
             model.print_trainable_parameters()
         except Exception:
             pass
+        # 防御：如果 target_modules 不匹配，可能导致没有任何可训练参数
+        trainable = 0
+        total = 0
+        for p in model.parameters():
+            total += p.numel()
+            if p.requires_grad:
+                trainable += p.numel()
+        if trainable == 0:
+            raise RuntimeError(
+                "LoRA/PEFT enabled but no trainable parameters were created. "
+                "This usually means `peft.target_modules` does not match the model's module names. "
+                "Try overriding e.g. `peft.target_modules='[\"all-linear\"]'` (if your peft version supports it) "
+                "or update the target_modules list for Qwen3."
+            )
 
         # 关键：LoRA + gradient checkpointing 时，需要确保输入 embedding 输出 requires_grad=True，
         # 否则 torch.utils.checkpoint 会警告并导致 loss 无法反传梯度。
