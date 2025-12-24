@@ -29,7 +29,7 @@ sft:
 peft:
   # 显存不够时强烈建议开启 LoRA，只训练少量 adapter 参数
   enabled: false
-  r: 8
+  r: 32
   lora_alpha: 16
   lora_dropout: 0.05
   bias: none
