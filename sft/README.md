@@ -167,7 +167,9 @@ deepspeed --num_gpus=4 --module training.sft \
   train.per_device_train_batch_size=1 \
   train.gradient_accumulation_steps=4 \
   train.learning_rate=5e-6 \
-  train.max_steps=1
+  train.max_steps=1   \
+  train.cuda_mem_log_steps=1   \
+  train.log_cuda_mem=true
 ```
 
 说明：
