@@ -161,7 +161,7 @@ deepspeed --num_gpus=4 --module training.sft \
   data.train_file=data/examples/sft_sample.jsonl \
   output_dir=outputs/sft-qwen3-30b-a3b-lora \
   peft.enabled=true \
-  peft.r=16 \
+  peft.r=8 \
   peft.lora_alpha=32 \
   train.deepspeed_config=configs/deepspeed/zero3_offload.json \
   train.per_device_train_batch_size=1 \
@@ -169,7 +169,8 @@ deepspeed --num_gpus=4 --module training.sft \
   train.learning_rate=5e-6 \
   train.max_steps=1   \
   train.cuda_mem_log_steps=1   \
-  train.log_cuda_mem=true
+  train.log_cuda_mem=true  \
+  wandb.enabled=false
 ```
 
 说明：

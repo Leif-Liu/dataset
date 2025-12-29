@@ -34,8 +34,9 @@ peft:
   lora_dropout: 0.05
   bias: none
   # 适配大多数 LLaMA/Qwen 类架构；如不匹配可在命令行覆盖
-  #target_modules: ["q_proj","k_proj","v_proj","o_proj","gate_proj","up_proj","down_proj"]
-  target_modules: ["q_proj","k_proj","v_proj","o_proj"]
+  target_modules: ["q_proj","k_proj","v_proj","o_proj","gate_proj","up_proj","down_proj"]
+  #target_modules: ["q_proj","k_proj","v_proj","o_proj"]
+  #target_modules: ["q_proj","k_proj"]
 
 train:
   # 训练稳定性经验：>8.05e-6 容易发散；建议 <= 8e-6

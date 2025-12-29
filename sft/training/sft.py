@@ -3,8 +3,10 @@ from __future__ import annotations
 import os
 from dataclasses import dataclass
 import inspect
+import json
 import socket
 import sys
+import tempfile
 from typing import Any
 
 import hydra
@@ -171,6 +173,125 @@ def _ensure_single_process_dist_env_for_deepspeed(enabled: bool) -> None:
     os.environ.setdefault("DEEPSPEED_NO_MPI", "1")
 
 
+def _world_size_from_env() -> int:
+    try:
+        return int(os.environ.get("WORLD_SIZE", "1"))
+    except Exception:
+        return 1
+
+
+def _materialize_deepspeed_config(
+    config_path: str,
+    *,
+    per_device_train_batch_size: int,
+    gradient_accumulation_steps: int,
+    bf16: bool,
+    fp16: bool,
+) -> str:
+    """
+    DeepSpeed config files in this repo use "auto" for batch-size related fields.
+    When Transformers enables ZeRO-3 init (deepspeed.zero.Init), DeepSpeed parses the
+    config *during* model construction, and older/newer DS versions can choke on
+    "auto" strings. Here we write a temp JSON with concrete integers.
+    """
+    with open(config_path, "r", encoding="utf-8") as f:
+        cfg = json.load(f)
+
+    world_size = _world_size_from_env()
+    train_micro = int(per_device_train_batch_size)
+    gas = int(gradient_accumulation_steps)
+    train_batch = int(train_micro * gas * max(1, world_size))
+
+    if cfg.get("train_micro_batch_size_per_gpu") == "auto":
+        cfg["train_micro_batch_size_per_gpu"] = train_micro
+    if cfg.get("gradient_accumulation_steps") == "auto":
+        cfg["gradient_accumulation_steps"] = gas
+    if cfg.get("train_batch_size") == "auto":
+        cfg["train_batch_size"] = train_batch
+
+    # Keep precision flags consistent with TrainingArguments
+    if isinstance(cfg.get("bf16"), dict) and cfg["bf16"].get("enabled") == "auto":
+        cfg["bf16"]["enabled"] = bool(bf16)
+    if isinstance(cfg.get("fp16"), dict) and cfg["fp16"].get("enabled") == "auto":
+        cfg["fp16"]["enabled"] = bool(fp16)
+
+    tmp_dir = tempfile.gettempdir()
+    with tempfile.NamedTemporaryFile(
+        mode="w",
+        encoding="utf-8",
+        suffix=".deepspeed.json",
+        prefix="sft_",
+        dir=tmp_dir,
+        delete=False,
+    ) as wf:
+        json.dump(cfg, wf, indent=2, ensure_ascii=False)
+        wf.flush()
+        return wf.name
+
+
+def _init_torch_distributed_if_needed_for_zero_init() -> None:
+    """
+    HF ZeRO-3 init (deepspeed.zero.Init) constructs DeepSpeedConfig *before* DeepSpeed calls
+    init_distributed(). DeepSpeedConfig tries dist.get_world_size()/get_rank(); if torch.distributed
+    isn't initialized yet, it falls back to world_size=1 and then batch assertions can fail.
+    """
+    try:
+        import torch.distributed as dist  # type: ignore
+    except Exception:
+        return
+
+    # Only needed for multi-process launches
+    world_size = int(os.environ.get("WORLD_SIZE", "1"))
+    if world_size <= 1:
+        return
+
+    if dist.is_available() and dist.is_initialized():
+        return
+
+    # Ensure ranks/devices are set (DeepSpeed launcher typically exports these)
+    local_rank = int(os.environ.get("LOCAL_RANK", "0"))
+    if torch.cuda.is_available():
+        try:
+            torch.cuda.set_device(local_rank)
+        except Exception:
+            pass
+
+    # Init via env:// (MASTER_ADDR/MASTER_PORT/RANK/WORLD_SIZE must be present)
+    dist.init_process_group(backend="nccl", init_method="env://")
+
+
+def _init_deepspeed_comm_if_needed_for_zero_init() -> None:
+    """
+    DeepSpeedConfig (used by ZeRO-3 zero.Init) queries rank/world_size via deepspeed.comm (not
+    torch.distributed directly). If deepspeed.comm isn't initialized yet, it falls back to
+    world_size=1 and then batch assertions can fail (e.g. 16 != 1*4*1).
+    """
+    world_size = int(os.environ.get("WORLD_SIZE", "1"))
+    if world_size <= 1:
+        return
+    try:
+        import deepspeed.comm as ds_comm  # type: ignore
+    except Exception:
+        return
+    try:
+        # If already initialized, no-op
+        if hasattr(ds_comm, "is_initialized") and ds_comm.is_initialized():
+            return
+    except Exception:
+        pass
+
+    # Ensure CUDA device is set correctly
+    local_rank = int(os.environ.get("LOCAL_RANK", "0"))
+    if torch.cuda.is_available():
+        try:
+            torch.cuda.set_device(local_rank)
+        except Exception:
+            pass
+
+    # Use env:// (DeepSpeed launcher sets required env vars). Disable MPI discovery explicitly.
+    ds_comm.init_distributed(dist_backend="nccl", auto_mpi_discovery=False, init_method="env://")
+
+
 @hydra.main(version_base=None, config_path="../configs", config_name="sft")
 def main(cfg: DictConfig) -> None:
     print(OmegaConf.to_yaml(cfg))
@@ -178,6 +299,46 @@ def main(cfg: DictConfig) -> None:
 
     output_dir = to_absolute_path(str(cfg.output_dir))
     os.makedirs(output_dir, exist_ok=True)
+
+    # IMPORTANT (ZeRO-3): If you use DeepSpeed ZeRO-3, you must initialize the HF<->DeepSpeed
+    # integration *before* calling `from_pretrained()`. Otherwise, each rank may try to materialize
+    # the full model on a single GPU during `engine._configure_distributed_model()` and OOM
+    # (especially for 30B+ models on 48GB cards).
+    #
+    # Creating `HfDeepSpeedConfig` early enables parameter partitioning-aware init (zero.Init)
+    # where supported by the installed Transformers version.
+    deepspeed_config = str(cfg.train.deepspeed_config) if cfg.train.deepspeed_config else None
+    if deepspeed_config:
+        deepspeed_config = to_absolute_path(deepspeed_config)
+        # Must be set before ZeRO-3 init kicks in (it can call deepspeed.comm.init_distributed()).
+        _ensure_single_process_dist_env_for_deepspeed(enabled=True)
+        # For multi-GPU launches, initialize torch.distributed early so DeepSpeedConfig sees
+        # the correct world_size during ZeRO-3 model init.
+        _init_torch_distributed_if_needed_for_zero_init()
+        # Also initialize DeepSpeed's comm wrapper (DeepSpeedConfig reads world_size from it).
+        _init_deepspeed_comm_if_needed_for_zero_init()
+        deepspeed_config = _materialize_deepspeed_config(
+            deepspeed_config,
+            per_device_train_batch_size=int(cfg.train.per_device_train_batch_size),
+            gradient_accumulation_steps=int(cfg.train.gradient_accumulation_steps),
+            bf16=bool(cfg.train.bf16),
+            fp16=bool(cfg.train.fp16),
+        )
+        try:
+            # Transformers >= 4.26
+            from transformers.integrations import HfDeepSpeedConfig  # type: ignore
+        except Exception:
+            try:
+                # Older/alternate import path
+                from transformers.deepspeed import HfDeepSpeedConfig  # type: ignore
+            except Exception as e:
+                raise RuntimeError(
+                    "DeepSpeed config is set, but Transformers DeepSpeed integration is unavailable. "
+                    "Please upgrade transformers or install a compatible version."
+                ) from e
+
+        # Keep a reference so it is not garbage-collected.
+        _dschf = HfDeepSpeedConfig(deepspeed_config)  # noqa: F841
 
     tokenizer = AutoTokenizer.from_pretrained(
         cfg.model.name_or_path,
@@ -192,6 +353,7 @@ def main(cfg: DictConfig) -> None:
         cfg.model.name_or_path,
         trust_remote_code=bool(cfg.model.trust_remote_code),
         torch_dtype=torch_dtype,
+        low_cpu_mem_usage=True,
     )
 
     # ===== Optional: LoRA (PEFT) to reduce VRAM/optimizer state =====
@@ -312,10 +474,7 @@ def main(cfg: DictConfig) -> None:
         run_name = str(cfg.wandb.run_name) if cfg.wandb.run_name else None
         os.environ.setdefault("WANDB_PROJECT", str(cfg.wandb.project))
 
-    deepspeed_config = str(cfg.train.deepspeed_config) if cfg.train.deepspeed_config else None
-    if deepspeed_config:
-        deepspeed_config = to_absolute_path(deepspeed_config)
-    _ensure_single_process_dist_env_for_deepspeed(enabled=bool(deepspeed_config))
+    # (env vars for single-process deepspeed already handled above, before model init)
 
     args = TrainingArguments(
         output_dir=output_dir,
