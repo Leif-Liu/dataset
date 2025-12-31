@@ -229,6 +229,23 @@ def _materialize_deepspeed_config(
         return wf.name
 
 
+def _load_deepspeed_config_dict(path: str) -> dict[str, Any]:
+    """
+    DeepSpeed accepts json/hjson. Our materialized config is JSON.
+    """
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except Exception:
+        try:
+            import hjson  # type: ignore
+
+            with open(path, "r", encoding="utf-8") as f:
+                return hjson.load(f)
+        except Exception:
+            return {}
+
+
 def _init_torch_distributed_if_needed_for_zero_init() -> None:
     """
     HF ZeRO-3 init (deepspeed.zero.Init) constructs DeepSpeedConfig *before* DeepSpeed calls
@@ -428,6 +445,34 @@ def main(cfg: DictConfig) -> None:
     max_len = int(cfg.tokenizer.max_length)
     train_on_prompt = bool(cfg.sft.train_on_prompt)
     add_eos = bool(cfg.sft.add_eos_token)
+
+    # Optional: ZeRO-3 memory estimate (print-only). Guarded to avoid noise and import cost.
+    # Only print on rank0 and only when the configured ZeRO stage is 3.
+    # Only for the LoRA part.
+    if deepspeed_config and int(os.environ.get("RANK", "0")) == 0:
+        ds_cfg = _load_deepspeed_config_dict(deepspeed_config)
+        zero_stage = None
+        try:
+            zero_stage = int(ds_cfg.get("zero_optimization", {}).get("stage", -1))
+        except Exception:
+            zero_stage = None
+        if zero_stage == 3:
+            try:
+                from deepspeed.runtime.zero.stage3 import (  # type: ignore
+                    estimate_zero3_model_states_mem_needs_all_live,
+                )
+
+                num_gpus_per_node = int(os.environ.get("LOCAL_WORLD_SIZE", os.environ.get("WORLD_SIZE", "1")))
+                world_size = int(os.environ.get("WORLD_SIZE", str(num_gpus_per_node)))
+                num_nodes = max(1, world_size // max(1, num_gpus_per_node))
+                estimate_zero3_model_states_mem_needs_all_live(
+                    model,
+                    num_gpus_per_node=num_gpus_per_node,
+                    num_nodes=num_nodes,
+                    additional_buffer_factor=1.5,
+                )
+            except Exception as e:
+                print(f"[warn] ZeRO-3 memory estimate skipped: {e}")
 
     def preprocess(ex: dict[str, Any]) -> dict[str, Any]:
         prompt = str(ex["prompt"])
