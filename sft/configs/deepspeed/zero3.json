@@ -26,7 +26,8 @@
   "activation_checkpointing": {
     "partition_activations": true,
     "contiguous_memory_optimization": true,
-    "cpu_checkpointing": false
+    "cpu_checkpointing": false,
+    "profile": true
   },
   "wall_clock_breakdown": false
 }
