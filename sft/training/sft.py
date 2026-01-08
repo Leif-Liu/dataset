@@ -22,6 +22,7 @@ from transformers import (
 from transformers.trainer_callback import TrainerCallback
 
 from data.loaders import load_sft_dataset
+from data.processors import create_optimized_processor, DataProcessor
 from utils.seed import set_seed
 from utils.text import ensure_eos, format_prompt
 
@@ -474,43 +475,48 @@ def main(cfg: DictConfig) -> None:
             except Exception as e:
                 print(f"[warn] ZeRO-3 memory estimate skipped: {e}")
 
-    def preprocess(ex: dict[str, Any]) -> dict[str, Any]:
-        prompt = str(ex["prompt"])
-        completion = str(ex["completion"])
-        prompt_text = format_prompt(template, prompt)
-        full_text = prompt_text + completion
-        if add_eos:
-            full_text = ensure_eos(full_text, tokenizer.eos_token)
+    # 获取数据处理配置参数
+    processing_cfg = cfg.data.get('processing', {})
+    num_proc = processing_cfg.get('num_proc', 'auto')
+    if num_proc == 'auto':
+        num_proc = min(8, os.cpu_count() or 1)
+    else:
+        num_proc = int(num_proc)
 
-        prompt_ids = tokenizer(
-            prompt_text,
-            truncation=True,
-            max_length=max_len,
-            add_special_tokens=False,
-        )["input_ids"]
+    batch_size = int(processing_cfg.get('batch_size', 1000))
+    enable_cache = bool(processing_cfg.get('enable_cache', True))
+    cache_dir = str(processing_cfg.get('cache_dir', 'data/cache'))
+    enable_validation = bool(processing_cfg.get('enable_validation', True))
 
-        enc = tokenizer(
-            full_text,
-            truncation=True,
-            max_length=max_len,
-            add_special_tokens=False,
-        )
-        input_ids = enc["input_ids"]
-        attention_mask = enc["attention_mask"]
+    # 使用优化的数据处理器，支持并发处理、缓存和批量优化
+    print(f"🚀 Creating optimized data processor...")
+    print(f"   - num_proc: {num_proc}")
+    print(f"   - batch_size: {batch_size}")
+    print(f"   - enable_cache: {enable_cache}")
+    print(f"   - enable_validation: {enable_validation}")
 
-        labels = input_ids.copy()
-        if not train_on_prompt:
-            cut = min(len(prompt_ids), len(labels))
-            labels[:cut] = [-100] * cut
-        return {"input_ids": input_ids, "attention_mask": attention_mask, "labels": labels}
+    processor = DataProcessor(
+        tokenizer=tokenizer,
+        template=template,
+        max_length=max_len,
+        train_on_prompt=train_on_prompt,
+        add_eos_token=add_eos,
+        enable_cache=enable_cache,
+        cache_dir=cache_dir,
+        num_proc=num_proc,
+        batch_size=batch_size,
+        enable_validation=enable_validation,
+    )
 
-    ds = ds.map(preprocess, remove_columns=ds.column_names)
+    # 处理训练数据集 - 自动应用并发处理、缓存和批量优化
+    ds = processor.process_dataset(ds, desc="Processing SFT training data")
 
     eval_ds = None
     if cfg.data.eval_file:
         eval_file = to_absolute_path(str(cfg.data.eval_file))
         eval_ds = load_sft_dataset(eval_file, str(cfg.data.prompt_key), str(cfg.data.completion_key))
-        eval_ds = eval_ds.map(preprocess, remove_columns=eval_ds.column_names)
+        # 处理评估数据集 - 同样使用优化处理器
+        eval_ds = processor.process_dataset(eval_ds, desc="Processing SFT evaluation data")
 
     report_to = "none"
     run_name = None
