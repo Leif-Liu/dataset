@@ -431,7 +431,7 @@
 
   所有优化都是向后兼容的，您可以通过 configs/sft.yaml 中的配置参数进行个性化调整。优化已经集成到现有训练流程中，无需额外操作即可享受性能提升！
 
-✻ Crunched for 8m 15s
+✻ Baked for 8m 15s
 
 ❯ 修改内容有更新到本地代码吗？ 
 
@@ -495,7 +495,7 @@
 
   所有的代码修改都是向后兼容的，不会影响现有的训练流程。
 
-✻ Brewed for 43s
+✻ Crunched for 43s
 
 ❯ 失败的配置:                                                               
   - proc1_batch100: 'Dataset' object has no attribute 'copy'                
@@ -675,7 +675,7 @@
 
   您的数据处理优化现在可以正常工作，将为您提供 3-5倍的性能提升！
 
-✻ Brewed for 2m 11s
+✻ Worked for 2m 11s
 
 ❯ hello 
 
@@ -747,7 +747,7 @@
 
   这些改动已全部提交到本地工作区，您现在可以直接运行 python -m training.sft 开始训练，或使用 python simple_benchmark.py / python benchmark_data_processing.py 观察性能提升。
 
-✻ Worked for 41s
+✻ Brewed for 41s
 
 ❯ 如果采用流式处理大数据集StreamingDataProcessor，那就不会使用cache操作了吧 
   ，也没有并行操作了吧；                                                    
@@ -862,7 +862,7 @@
   - 如果你希望在 大数据集上仍保有缓存与并行 的优势，请继续使用 DataProcessor（配合 enable_cache、num_proc），或将大文件事先 拆分 再并行处理。
   - 两者可以在同一代码基座里交叉使用：先用 should_use_streaming 判断，大文件走流式，小文件走普通处理，这样即可兼顾 内存安全 与 性能加速。
 
-✻ Brewed for 47s
+✻ Baked for 47s
 
 ❯ 那我理解啦，流式处理大数据集，只是通过streamer.create_streaming_dataset代 
   替load_sft_dataset，然后还是需要通过DataProcessor做并行与缓存的优化，是这 
@@ -955,7 +955,7 @@
 
   这样就能在 内存受限 与 性能加速 之间灵活取舍。祝使用顺利！
 
-✻ Sautéed for 31s
+✻ Baked for 31s
 
 ❯ 是说在用流式处理大数据集时候，create_streaming_dataset是通过循环持续输出r 
   aw_ds,再通过processor.process_dataset持续生成总的processed_ds，所以就无法 
@@ -1319,7 +1319,108 @@
 
   这样既能在 内存受限 的情况下安全地处理超大数据，又能在 重复实验 时充分利用 缓存 + 多进程 带来的加速，达到最高效的训练工作流。若还有其他细节（例如把拆分脚本独立为 CLI、在 Hydra 配置中加入自动拆分等），随时告诉我，我可以帮你进一步封装。
 
-✻ Churned for 49s
+✻ Brewed for 49s
+
+❯ /export stream_dataprocess_summary.txt 
+  ⎿  Conversation exported to: stream_dataprocess_summary.txt
+
+❯ /agents 
+  ⎿  Agents dialog dismissed
+
+❯ /rename sft-data-preprocess 
+  ⎿  Session renamed to: sft-data-preprocess
+
+❯ train_dataset.save_to_disk(str(output_path))                              
+  之后，再次进行训练时候，如何直接通过文件加载所有训练数据集                
+
+● 要在后续训练时直接读取已经保存好的 Arrow 数据集，只需使用 datasets.load_from_disk 将其恢复为 Dataset 对象，然后把它交给 🤗 Trainer（或您自己的 DataLoader）即可。下面给出完整的示例步骤，您可以把它直接放到 training/sft.py 或单独的脚本里。
+
+  ---
+  1️⃣ 保存数据集（您已经完成）
+
+  # 处理完所有子文件后
+  train_dataset.save_to_disk("data/train_processed.arrow")
+
+  save_to_disk 会把整个 Dataset（包括所有列、特征、分区信息）序列化为 Arrow 文件，随后可以无缝加载。
+
+  ---
+  2️⃣ 读取保存好的数据集
+
+  from datasets import load_from_disk
+
+  # 路径必须与保存时保持一致
+  train_dataset = load_from_disk("data/train_processed.arrow")
+
+  - load_from_disk 会返回与保存时完全相同的 datasets.Dataset 实例，包含 input_ids、attention_mask、labels 等列，已经完成了 tokenization、padding‑延迟、标签掩码处理等步骤。
+
+  ---
+  3️⃣ 在训练脚本中使用（与原来几乎无差别）
+
+  from transformers import Trainer, TrainingArguments
+
+  # …（初始化 tokenizer、model 等）…
+
+  # 直接加载缓存好的数据集
+  train_dataset = load_from_disk("data/train_processed.arrow")
+
+  # 若还有验证集（同理）：
+  # eval_dataset = load_from_disk("data/eval_processed.arrow")
+
+  trainer = Trainer(
+      model=model,
+      args=TrainingArguments(
+          output_dir=output_dir,
+          # 其余您需要的 training 参数 …
+      ),
+      train_dataset=train_dataset,
+      # eval_dataset=eval_dataset,   # 如有
+      data_collator=CausalLMCollator(tokenizer),  # 您原来的 collator
+  )
+
+  trainer.train()
+
+  关键点说明
+  步骤: load_from_disk(path)
+  目的: 把磁盘上的 Arrow 文件恢复为 Dataset
+  注意事项: 路径要与 save_to_disk 使用的路径保持一致
+  ────────────────────────────────────────
+  步骤: train_dataset 直接传给 Trainer
+  目的: Trainer 会使用已有的 input_ids、attention_mask、labels，不再进行任何预处理
+  注意事项: 确保 DataProcessor 在第一次处理时已经完成了 标签掩码（[-100]）等操作
+  ────────────────────────────────────────
+  步骤: 通过 data_collator 只负责 padding
+  目的: 因为 process_dataset 已经延迟了 padding，collator 会在 batch 时统一 padding
+  注意事项: 与之前的实现相同，无需改动
+  ────────────────────────────────────────
+  步骤: 若需要 增量训练 或 继续实验
+  目的: 只要不改动 DataProcessor
+    的关键配置（template、max_length、train_on_prompt、add_eos_token、tokenizer），缓存文件仍然有效
+  注意事项: 配置变更后会自动重新生成缓存文件
+  ---
+  4️⃣ 常见问题 & 小技巧
+
+  1. 缓存失效
+    - DataProcessor 的缓存键是基于 template、max_length、train_on_prompt、add_eos_token、tokenizer.name_or_path 生成的 MD5。只要这些值保持不变，load_from_disk 读取的文件就是最新的。如果您改动了任意一项（比如换了模型或修改了模板），请重新运行一次完整的预处理，以生成新的缓存文件。
+  2. 多卡 / 分布式训练
+    - load_from_disk 返回的 Dataset 已经是 完整的（不再依赖 map），可直接在多卡环境下使用 Trainer 的 accelerate 或 DeepSpeed 分布式策略，无需额外同步。
+  3. 只想加载一部分
+    - Dataset 支持切片，例如 train_dataset.select(range(0, 10000))，如果您只想快速实验子集，可以在加载后直接 select。
+  4. 验证集的缓存
+    - 同理，您可以在第一次预处理时对 eval_file 调用 processor.process_dataset(... ) 并保存为 data/eval_processed.arrow，后续训练直接 load_from_disk。
+  5. 检查加载是否成功
+  train_dataset = load_from_disk("data/train_processed.arrow")
+  print(train_dataset[0])   # 查看第一条记录，确认 `input_ids`、`attention_mask`、`labels` 存在
+
+  ---
+  小结
+
+  1. 保存 → train_dataset.save_to_disk("path")（已完成）
+  2. 加载 → train_dataset = load_from_disk("path")
+  3. 直接喂给 Trainer → 与原始流程相同，省去所有重复的 tokenization 与验证步骤，实现 秒级启动 的训练循环。
+
+  这样，您只需要在首次预处理时花一次时间生成缓存，后续所有实验只需几秒即可启动，大幅提升迭代效率。祝您训练顺利 🚀
+
+✻ Cooked for 46s
 
 
 
