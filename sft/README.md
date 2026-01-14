@@ -174,7 +174,7 @@ deepspeed --num_gpus=4 --module training.sft \
 ```
 -- 当前可选配置 4×4090 + 30B + LoRA-only+ ZeRO-3 + gradient_checkpointing: true + max_steps=2
 -- 单卡峰值显存 35GB（nvtop显示）
--- 训练阶段8个样本耗时440秒，总共耗时40分钟
+-- 训练阶段8个样本耗时440秒，总共耗时40分钟 (sft 目录)
 
 deepspeed --include localhost:0,1,2,3  --module training.sft  \
   model.name_or_path=Qwen/Qwen3-30B-A3B-Thinking-2507 \
@@ -183,7 +183,7 @@ deepspeed --include localhost:0,1,2,3  --module training.sft  \
   peft.enabled=true   \
   peft.r=8   \
   peft.lora_alpha=32   \
-  train.deepspeed_config=/home/liufeng/dataset/sft/configs/deepspeed/zero3.json   \
+  train.deepspeed_config=./configs/deepspeed/zero3.json   \
   train.per_device_train_batch_size=1   \
   train.gradient_accumulation_steps=4   \
   train.learning_rate=5e-6   \
