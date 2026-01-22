@@ -1,0 +1,25 @@
+system:
+  requirements_dir: "data/requirements"
+  output_dir: "outputs"
+
+llm:
+  provider: "openai"                      # mock | openai | openai_compatible
+  model: "openai-mirror/gpt-oss-120b"
+  base_url: "http://10.10.11.7:11541/v1"  # vLLM OpenAI-compatible base URL
+  api_key: "vllm"                         # use env OPENAI_API_KEY if empty
+  context_window: 131072
+
+embedding:
+  provider: "openai"                      # mock | huggingface | openai | openai_compatible
+  model: "BAAI/bge-m3"
+  base_url: "http://10.10.11.7:11535/v1"  # vLLM OpenAI-compatible base URL for embeddings
+  api_key: "vllm"                         # use env OPENAI_API_KEY if empty
+  context_window: 8192
+
+rag:
+  chunk_size: 512
+  chunk_overlap: 64
+
+kg:
+  max_triplets_per_chunk: 8
+
