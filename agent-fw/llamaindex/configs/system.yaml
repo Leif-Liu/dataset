@@ -25,7 +25,7 @@ rag:
 parser:
   type: "llamaparse"         # simple | llamaparse | unstructured
   llamaparse:                # only for llamaparse of remote service
-    api_key: "llx-vUUrTxYcsO7rmX4aJyj6Ea7qAibGhkgYe42m49liwz4f0hQi"
+    api_key: ""              # prefer env LLAMAPARSE_API_KEY in .env
     result_type: "markdown"
     language: "zh"
   unstructured:              # only for unstructured of local service

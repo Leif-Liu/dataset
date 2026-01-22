@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 from typing import Any, Dict
+import os
 
 import yaml
 
@@ -10,6 +11,20 @@ def load_config(config_path: str) -> Dict[str, Any]:
     with open(config_path, "r", encoding="utf-8") as f:
         data = yaml.safe_load(f) or {}
     return data
+
+
+def load_env_file(env_path: Path) -> None:
+    if not env_path.exists():
+        return
+    for line in env_path.read_text(encoding="utf-8").splitlines():
+        stripped = line.strip()
+        if not stripped or stripped.startswith("#") or "=" not in stripped:
+            continue
+        key, value = stripped.split("=", 1)
+        key = key.strip()
+        value = value.strip().strip('"').strip("'")
+        if key:
+            os.environ.setdefault(key, value)
 
 
 def resolve_path(base_dir: Path, value: str) -> str:

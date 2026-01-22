@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+import os
 from typing import Any, Dict, List, Optional
 
 from llama_index.core import SimpleDirectoryReader, StorageContext, VectorStoreIndex
@@ -26,7 +27,7 @@ def load_documents(requirements_dir: str, parser_cfg: Dict[str, Any]) -> List[Do
             ) from exc
 
         lp_cfg = dict(parser_cfg.get("llamaparse", {}))
-        api_key = lp_cfg.pop("api_key", None)
+        api_key = lp_cfg.pop("api_key", None) or os.getenv("LLAMAPARSE_API_KEY")
         reader = SimpleDirectoryReader(
             input_dir=requirements_dir,
             recursive=True,

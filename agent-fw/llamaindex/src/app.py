@@ -4,12 +4,13 @@ from pathlib import Path
 
 from flows.requirement_to_testcases import RequirementToTestcaseFlow, write_output
 from llms.factory import init_llamaindex_settings
-from settings import load_config, resolve_paths
+from settings import load_config, resolve_paths, load_env_file
 
 
 def main() -> None:
     root_dir = Path(__file__).resolve().parents[1]
     config_path = root_dir / "configs" / "system.yaml"
+    load_env_file(root_dir / ".env")
 
     config = load_config(str(config_path))
     config = resolve_paths(config, root_dir)

@@ -83,6 +83,9 @@ Document Parsing & Splitting
 - Index persistence:
   - `rag.persist_dir` and `kg.persist_dir` control local storage paths
   - If the directories already contain indexes, they will be loaded
+- LlamaParse API key:
+  - Put `LLAMAPARSE_API_KEY` in `/home/liufeng/sdk-ragflow/agent-fw/llamaindex/.env`
+  - `.env` is ignored by git
 - If you want local embeddings, set embedding.provider to "huggingface"
   and ensure sentence-transformers is installed.
 
