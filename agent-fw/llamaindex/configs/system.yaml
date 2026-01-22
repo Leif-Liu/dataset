@@ -19,7 +19,19 @@ embedding:
 rag:
   chunk_size: 512
   chunk_overlap: 64
+  splitter: "sentence"   # sentence | semantic | hierarchical | markdown
+  persist_dir: "storage/rag"
+
+parser:
+  type: "llamaparse"         # simple | llamaparse | unstructured
+  llamaparse:                # only for llamaparse of remote service
+    api_key: "llx-vUUrTxYcsO7rmX4aJyj6Ea7qAibGhkgYe42m49liwz4f0hQi"
+    result_type: "markdown"
+    language: "zh"
+  unstructured:              # only for unstructured of local service
+    strategy: "fast"
 
 kg:
   max_triplets_per_chunk: 8
+  persist_dir: "storage/kg"
 

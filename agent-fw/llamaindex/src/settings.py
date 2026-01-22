@@ -29,5 +29,14 @@ def resolve_paths(config: Dict[str, Any], base_dir: Path) -> Dict[str, Any]:
     if "output_dir" in system_cfg:
         system_cfg["output_dir"] = resolve_path(base_dir, system_cfg["output_dir"])
     cfg["system"] = system_cfg
+    rag_cfg = dict(cfg.get("rag", {}))
+    if "persist_dir" in rag_cfg:
+        rag_cfg["persist_dir"] = resolve_path(base_dir, rag_cfg["persist_dir"])
+    cfg["rag"] = rag_cfg
+
+    kg_cfg = dict(cfg.get("kg", {}))
+    if "persist_dir" in kg_cfg:
+        kg_cfg["persist_dir"] = resolve_path(base_dir, kg_cfg["persist_dir"])
+    cfg["kg"] = kg_cfg
     return cfg
 

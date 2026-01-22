@@ -57,16 +57,20 @@ class RequirementToTestcaseFlow:
         kg_cfg = self.config.get("kg", {})
 
         requirements_dir = system_cfg["requirements_dir"]
-        documents = load_documents(requirements_dir)
+        parser_cfg = self.config.get("parser", {})
+        documents = load_documents(requirements_dir, parser_cfg)
 
         rag_index = build_rag_index(
             documents,
             chunk_size=int(rag_cfg.get("chunk_size", 512)),
             chunk_overlap=int(rag_cfg.get("chunk_overlap", 64)),
+            splitter_type=str(rag_cfg.get("splitter", "sentence")),
+            persist_dir=rag_cfg.get("persist_dir"),
         )
         kg_index = build_kg_index(
             documents,
             max_triplets_per_chunk=int(kg_cfg.get("max_triplets_per_chunk", 8)),
+            persist_dir=kg_cfg.get("persist_dir"),
         )
 
         requirement_agent = build_requirement_agent(rag_index, kg_index)

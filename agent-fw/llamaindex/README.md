@@ -27,6 +27,9 @@ Directory Layout
 ├── data
 │   └── requirements
 │       └── sample_requirements.md
+├── storage
+│   ├── rag
+│   └── kg
 ├── outputs
 ├── src
 │   ├── agents
@@ -69,6 +72,17 @@ Notes
   - embedding.context_window: 8192 (optional)
 - For custom embedding model names (e.g. "BAAI/bge-m3") via OpenAI-compatible
   servers, you can also set embedding.provider to "openai_compatible".
+
+Document Parsing & Splitting
+- Configure layout-aware parsing (PDF/Word) via `parser.type`:
+  - `simple` (default): SimpleDirectoryReader only
+  - `llamaparse`: requires `llama-index-readers-llama-parse`
+  - `unstructured`: requires `llama-index-readers-unstructured`
+- Configure splitting via `rag.splitter`:
+  - `sentence` (default), `semantic`, `hierarchical`, `markdown`
+- Index persistence:
+  - `rag.persist_dir` and `kg.persist_dir` control local storage paths
+  - If the directories already contain indexes, they will be loaded
 - If you want local embeddings, set embedding.provider to "huggingface"
   and ensure sentence-transformers is installed.
 
