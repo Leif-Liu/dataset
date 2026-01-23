@@ -48,9 +48,11 @@ Directory Layout
 
 Quick Start
 1) Install dependencies
+   conda create -n llamaindex python=3.11.0
    pip install -r /home/liufeng/sdk-ragflow/agent-fw/llamaindex/requirements.txt
 
 2) Run backend
+   conda activate llamaindex
    python /home/liufeng/sdk-ragflow/agent-fw/llamaindex/src/app.py
 
 3) Outputs
