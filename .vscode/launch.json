@@ -366,5 +366,31 @@
             "cwd": "${workspaceFolder}/agent-fw/llamaindex",
             "args": []
         }
+        ,
+        {
+            "name": "LangChain Debug: app.py (conda: langchain)",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/agent-fw/langchain/src/app.py",
+            "console": "integratedTerminal",
+            "python": "/home/liufeng/miniconda3/envs/langchain/bin/python",
+            "env": {
+                "CONDA_DEFAULT_ENV": "langchain",
+                "CONDA_PREFIX": "/home/liufeng/miniconda3/envs/langchain",
+                "CONDA_PREFIX_1": "/home/liufeng/miniconda3",
+                "CONDA_PYTHON_EXE": "/home/liufeng/miniconda3/bin/python",
+                "CONDA_EXE": "/home/liufeng/miniconda3/bin/conda"
+            },
+            "justMyCode": false,
+            "debugStdLib": true,
+            "pathMappings": [
+                {
+                    "localRoot": "/home/liufeng/miniconda3/envs/langchain/lib/python3.11/site-packages",
+                    "remoteRoot": "/home/liufeng/miniconda3/envs/langchain/lib/python3.11/site-packages"
+                }
+            ],
+            "cwd": "${workspaceFolder}/agent-fw/langchain",
+            "args": []
+        }
     ]
 }

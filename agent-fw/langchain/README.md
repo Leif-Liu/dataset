@@ -1,0 +1,95 @@
+LangChain Agent System - Requirements to Test Cases
+
+Overview
+- Root: /home/liufeng/sdk-ragflow/agent-fw/langchain
+- Purpose: Import and merge user requirement documents and generate functional
+  test cases with a LangChain-based agent system.
+- Scope: Backend only (no frontend).
+
+Architecture
+- Config: YAML-based system configuration.
+- Data: Requirement documents (markdown/txt/pdf) under data/requirements.
+- Core modules:
+  - LLMs: Factory for selecting LLM/Embedding provider.
+  - RAG: Document loading, chunking, and vector indexing.
+  - KnowledgeGraph: Graph index for entity/relationship reasoning.
+  - Flow: Orchestrates ingestion, indexing, and multi-agent execution.
+  - Implemented with LangGraph (nodes/edges)
+  - Agent: Multiple tool-augmented agents with RAG + KG query tools.
+    - Requirement Agent: extract and merge requirements
+    - Risk Agent: edge cases / failure scenarios
+    - Testcase Agent: generate test cases
+    - Review Agent: validate and refine outputs
+
+Directory Layout
+.
+├── configs
+│   └── system.yaml
+├── data
+│   └── requirements
+│       └── sample_requirements.md
+├── storage
+│   ├── rag
+│   └── kg
+├── outputs
+├── src
+│   ├── agents
+│   │   ├── tools.py
+│   │   ├── requirement_agent.py
+│   │   ├── risk_agent.py
+│   │   ├── testcase_agent.py
+│   │   └── review_agent.py
+│   ├── flows
+│   │   └── requirement_to_testcases.py
+│   ├── kg
+│   │   └── build.py
+│   ├── llms
+│   │   └── factory.py
+│   ├── rag
+│   │   └── ingest.py
+│   ├── app.py
+│   └── settings.py
+└── requirements.txt
+
+Quick Start
+1) Install dependencies
+   conda create -n langchain python=3.11.0
+   pip install -r /home/liufeng/sdk-ragflow/agent-fw/langchain/requirements.txt
+
+2) Run backend
+   conda activate langchain
+   python /home/liufeng/sdk-ragflow/agent-fw/langchain/src/app.py
+
+3) Outputs
+   - Console: Generated test cases
+   - File: outputs/testcases.md
+
+Notes
+- For vLLM (OpenAI-compatible), set:
+  - llm.provider: "openai" (or "openai_compatible" for custom model names)
+  - llm.base_url: "http://<host>:<port>/v1"
+  - llm.model: "<your-model-name>"
+  - llm.api_key: "<token>" (or export OPENAI_API_KEY)
+  - llm.context_window: 131072 (optional)
+- For embeddings with the same OpenAI-compatible server, set:
+  - embedding.provider: "openai"
+  - embedding.base_url: "http://<host>:<port>/v1"
+  - embedding.model: "<your-embedding-model>"
+  - embedding.api_key: "<token>" (or export OPENAI_API_KEY)
+  - embedding.context_window: 8192 (optional)
+- For custom embedding model names (e.g. "BAAI/bge-m3") via OpenAI-compatible
+  servers, you can also set embedding.provider to "openai_compatible".
+ - If you want local embeddings, set embedding.provider to "huggingface"
+   and ensure sentence-transformers is installed.
+
+Document Parsing & Splitting
+- Configure layout-aware parsing (PDF/Word) via `parser.type`:
+  - `simple` (default): standard loaders
+  - `llamaparse`: requires `llama-parse`
+  - `unstructured`: requires `unstructured`
+- Configure splitting via `rag.splitter`:
+  - `sentence` (default), `semantic`, `hierarchical`, `markdown`
+- Index persistence:
+  - `rag.persist_dir` and `kg.persist_dir` control local storage paths
+  - If the directories already contain indexes, they will be loaded
+

@@ -1,0 +1,6 @@
+storage/
+outputs/
+__pycache__/
+*.pyc
+.env
+
