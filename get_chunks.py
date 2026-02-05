@@ -1,10 +1,14 @@
 from ragflow_sdk import RAGFlow
 import os
 
-rag_object = RAGFlow(api_key="ragflow-g1ZGRhNjQyNTYzZTExZjA4ZjZiODY2Nj", base_url="http://10.10.11.7:9380")
+rag_object = RAGFlow(api_key="ragflow-dOaxETaP66RCzPgPNYKmKyORPPAaO6P96TVSgmOrA5E", base_url="http://10.10.11.13:9380")
+
+# 前端可配置参数
+TOTAL_PAGES = 100  # 要遍历的总页数
+CHUNKS_PER_PAGE = 50  # 每页chunk数量
 
 # 创建输出目录
-output_dir = "ragflow_chunks_QA"
+output_dir = "ragflow_chunks_QA_VCU"
 if not os.path.exists(output_dir):
     os.makedirs(output_dir)
     print(f"创建输出目录: {output_dir}")
@@ -14,7 +18,7 @@ datasets = rag_object.list_datasets()
 print(f"找到 {len(datasets)} 个数据集")
 
 # 查找指定ID的数据集
-target_dataset_id = "6e4d228a72a111f0984162aa9af12f97"
+target_dataset_id = "d483981bfb6511f0a535065a3d57bbcc"
 target_dataset = None
 
 for dataset in datasets:
@@ -33,20 +37,18 @@ print(f"使用数据集: {target_dataset.name} (ID: {target_dataset.id})")
 docs = target_dataset.list_documents()
 print(f"数据集中有 {len(docs)} 个文档")
 
-# 设置要遍历的总页数
-total_pages = 10  # 您可以根据需要调整这个数值
-
 if len(docs) > 0:
+    dataset_chunks_total = 0
     # 遍历所有文档
     for doc_index, doc in enumerate(docs):
         print(f"\n=== 处理文档 {doc_index + 1}/{len(docs)}: {doc.name} ===")
         
         try:
-            total_chunks_count = 0
+            doc_chunks_total = 0
             
             # 遍历所有页面
-            for page_num in range(1, total_pages + 1):
-                print(f"\n  --- 获取第 {page_num} 页 ---")
+            for page_num in range(1, TOTAL_PAGES + 1):
+                print(f"\n  --- 文档 '{doc.name}' 获取第 {page_num} 页 ---")
                 
                 try:
                     chunks = doc.list_chunks(page=page_num)
@@ -56,12 +58,13 @@ if len(docs) > 0:
                         break  # 如果当前页没有chunks，说明已经到达最后一页
                     
                     print(f"  第 {page_num} 页包含 {len(chunks)} 个chunks")
-                    total_chunks_count += len(chunks)
+                    doc_chunks_total += len(chunks)
                     
                     # 遍历当前页的所有chunks
                     for chunk_index, chunk in enumerate(chunks):
-                        global_chunk_index = (page_num - 1) * 30 + chunk_index + 1  # 假设每页30个chunks
-                        print(f"    Chunk {global_chunk_index}: {chunk}")
+                        doc_chunk_index = (page_num - 1) * CHUNKS_PER_PAGE + chunk_index + 1
+                        #print(f"    Chunk {doc_chunk_index}: {chunk}")
+                        print(f"    Chunk {doc_chunk_index}")
                         
                         # 提取content字段内容
                         if hasattr(chunk, 'content') and chunk.content:
@@ -72,7 +75,7 @@ if len(docs) > 0:
                             if not safe_doc_name:
                                 safe_doc_name = f"doc_{doc_index + 1}"
                             
-                            filename = f"{safe_doc_name}_chunk_{global_chunk_index}.md"
+                            filename = f"{safe_doc_name}_chunk_{doc_chunk_index}.md"
                             filepath = os.path.join(output_dir, filename)
                             
                             # 写入文件
@@ -86,7 +89,7 @@ if len(docs) > 0:
                             except Exception as write_error:
                                 print(f"      写入文件时出错: {write_error}")
                         else:
-                            print(f"      Chunk {global_chunk_index} 没有content字段或content为空")
+                            print(f"      Chunk {doc_chunk_index} 没有content字段或content为空")
                         
                 except Exception as page_error:
                     print(f"  获取第 {page_num} 页时出错: {page_error}")
@@ -95,13 +98,15 @@ if len(docs) > 0:
                         break
                     continue
             
-            print(f"\n文档 '{doc.name}' 总计包含 {total_chunks_count} 个chunks")
+            dataset_chunks_total += doc_chunks_total
+            print(f"\n文档 '{doc.name}' 总计包含 {doc_chunks_total} 个chunks")
                 
         except Exception as e:
             print(f"  处理文档 '{doc.name}' 时出错: {e}")
             continue
             
     print(f"\n总计处理了 {len(docs)} 个文档")
+    print(f"数据集总计包含 {dataset_chunks_total} 个chunks")
     print(f"所有chunk内容已保存到目录: {output_dir}")
 else:
     print("数据集中没有文档")
