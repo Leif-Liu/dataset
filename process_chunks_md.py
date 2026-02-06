@@ -24,7 +24,7 @@ INPUT_DIR = "ragflow_chunks_QA_VCU"
 OUTPUT_DIR = "processed_md_dataset"
 
 # 文本分块配置
-CHUNK_SIZE = 4000      # 单个分块的最大字符数
+CHUNK_SIZE = 130000    # 单个分块的最大字符数
 CHUNK_OVERLAP = 200    # 分块之间的重叠字符数
 
 # ============================================================
