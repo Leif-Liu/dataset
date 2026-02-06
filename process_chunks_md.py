@@ -238,51 +238,64 @@ class MDChunkProcessor:
 
     def process_all_files(self):
         """
-        处理文件并生成训练数据（增量处理模式）
+        处理文件并生成训练数据（循环增量处理模式）
 
         - 每次处理最多10个文件
         - 数据追加到现有json文件
         - 处理成功后删除原md文件
         - 失败时无限重试，不丢数据
+        - 循环处理直到所有文件完成
         """
         print(f"{'='*60}")
-        print(f"开始处理 Markdown 文件（增量模式）")
+        print(f"开始处理 Markdown 文件（循环增量模式）")
         print(f"输入目录: {self.input_dir}")
         print(f"输出目录: {self.output_dir}")
         print(f"API 地址: {self.api_base}")
         print(f"模型: {self.model}")
         print(f"{'='*60}\n")
 
-        # 读取一批 MD 文件（最多10个）
-        chunks_data = self.read_md_files()
-        if not chunks_data:
-            print("没有可处理的文件")
-            return
+        batch_num = 0
+        total_processed = 0
 
-        # 为每个文件生成摘要
-        print(f"\n开始调用 LLM 生成摘要...\n")
-        for idx, chunk in enumerate(chunks_data, 1):
-            print(f"[{idx}/{len(chunks_data)}] 处理: {chunk['fileName']}")
-            summary = self.generate_summary(chunk['content'])
-            chunk['summary'] = summary
-            print(f"  摘要: {summary[:100]}...\n")
+        while True:
+            batch_num += 1
+            print(f"\n{'#'*60}")
+            print(f"# 批次 {batch_num}")
+            print(f"{'#'*60}\n")
 
-        # 生成不同格式的训练数据（追加模式）
-        self._save_datasets(chunks_data)
+            # 读取一批 MD 文件（最多10个）
+            chunks_data = self.read_md_files()
+            if not chunks_data:
+                print("\n没有更多文件需要处理")
+                break
 
-        # 删除已处理的 md 文件
-        print(f"\n删除已处理的 md 文件...")
-        for chunk in chunks_data:
-            try:
-                md_path = Path(chunk['filePath'])
-                if md_path.exists():
-                    md_path.unlink()
-                    print(f"  ✓ 已删除: {chunk['fileName']}")
-            except Exception as e:
-                print(f"  ✗ 删除失败 {chunk['fileName']}: {e}")
+            # 为每个文件生成摘要
+            print(f"\n开始调用 LLM 生成摘要...\n")
+            for idx, chunk in enumerate(chunks_data, 1):
+                print(f"[{idx}/{len(chunks_data)}] 处理: {chunk['fileName']}")
+                summary = self.generate_summary(chunk['content'])
+                chunk['summary'] = summary
+                print(f"  摘要: {summary[:100]}...\n")
+
+            # 生成不同格式的训练数据（追加模式）
+            self._save_datasets(chunks_data)
+
+            # 删除已处理的 md 文件
+            print(f"\n删除已处理的 md 文件...")
+            for chunk in chunks_data:
+                try:
+                    md_path = Path(chunk['filePath'])
+                    if md_path.exists():
+                        md_path.unlink()
+                        print(f"  ✓ 已删除: {chunk['fileName']}")
+                except Exception as e:
+                    print(f"  ✗ 删除失败 {chunk['fileName']}: {e}")
+
+            total_processed += len(chunks_data)
+            print(f"\n批次 {batch_num} 完成！累计处理 {total_processed} 个文件")
 
         print(f"\n{'='*60}")
-        print(f"本批次处理完成！剩余文件可重新运行程序继续处理")
+        print(f"所有文件处理完成！总计: {total_processed} 个文件")
         print(f"{'='*60}")
 
     def _save_datasets(self, chunks_data: List[Dict]):
