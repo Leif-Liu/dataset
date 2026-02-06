@@ -1,5 +1,6 @@
 import json
 import os
+import time
 from pathlib import Path
 from openai import OpenAI
 import argparse
@@ -77,12 +78,23 @@ class MDChunkProcessor:
             api_key=self.api_key
         )
 
-    def read_md_files(self) -> List[Dict[str, str]]:
-        """读取目录中的所有 Markdown 文件"""
+    def read_md_files(self, batch_size: int = 10) -> List[Dict[str, str]]:
+        """
+        读取目录中的 Markdown 文件（每次最多读取 batch_size 个）
+
+        Args:
+            batch_size: 每次读取的文件数量，默认10个
+
+        Returns:
+            文件数据列表
+        """
         md_files = list(self.input_dir.glob("*.md"))
         if not md_files:
             print(f"警告: 在 {self.input_dir} 中未找到 .md 文件")
             return []
+
+        # 只取前 batch_size 个文件
+        md_files = md_files[:batch_size]
 
         chunks_data = []
         for md_file in md_files:
@@ -103,7 +115,8 @@ class MDChunkProcessor:
             except Exception as e:
                 print(f"✗ 读取文件失败 {md_file.name}: {e}")
 
-        print(f"\n共读取 {len(chunks_data)} 个 Markdown 文件")
+        remaining = len(list(self.input_dir.glob("*.md"))) - len(md_files)
+        print(f"\n本次读取 {len(chunks_data)} 个 Markdown 文件，剩余 {remaining} 个文件")
         return chunks_data
 
     def split_text(self, text: str) -> List[str]:
@@ -139,43 +152,59 @@ class MDChunkProcessor:
 
         return [c for c in chunks if c]
 
-    def generate_summary(self, content: str, max_retries: int = 3) -> str:
+    def generate_summary(self, content: str) -> str:
         """
         调用 LLM 生成摘要
 
+        优化策略：
+        - 如果内容长度 <= 15000 字符，直接生成摘要，不分块
+        - 如果内容过长，才进行分块处理
+        - 失败时无限重试，直到成功
+
         Args:
             content: 输入内容
-            max_retries: 最大重试次数
 
         Returns:
             生成的摘要
         """
-        # 如果内容过长，先进行分块处理
+        # 方案B：直接摘要，不分块
+        # 如果内容长度 <= 15000 字符，直接调用LLM
+        if len(content) <= 15000:
+            print(f"  内容长度 {len(content)} 字符，直接生成摘要（不分块）")
+            return self._generate_summary_single(content)
+
+        # 内容过长时才进行分块处理
+        print(f"  内容长度 {len(content)} 字符，需要分块处理...")
         content_chunks = self.split_text(content)
 
         if len(content_chunks) == 1:
-            return self._generate_summary_single(content_chunks[0], max_retries)
+            return self._generate_summary_single(content_chunks[0])
         else:
             # 对每个块生成摘要，然后合并
             chunk_summaries = []
             for i, chunk in enumerate(content_chunks):
                 print(f"  处理分块 {i + 1}/{len(content_chunks)}...")
-                summary = self._generate_summary_single(chunk, max_retries)
+                summary = self._generate_summary_single(chunk)
                 chunk_summaries.append(summary)
 
-            # 将分块摘要合并后再次生成最终摘要
-            combined = "\n\n".join(chunk_summaries)
-            return self._generate_summary_single(combined, max_retries)
+            # 直接拼接摘要返回，不再调用LLM合并（节省1次调用）
+            print(f"  直接拼接 {len(chunk_summaries)} 个分块摘要")
+            return "\n\n".join(chunk_summaries)
 
-    def _generate_summary_single(self, content: str, max_retries: int = 3) -> str:
-        """生成单个内容的摘要"""
+    def _generate_summary_single(self, content: str) -> str:
+        """
+        生成单个内容的摘要
+
+        失败时无限重试，直到成功为止
+        """
         prompt = f"""请为以下内容生成一个简洁的摘要（3-5句话，突出重点）：
 
 {content}
 
 摘要："""
 
-        for attempt in range(max_retries):
+        attempt = 0
+        while True:
             try:
                 response = self.client.chat.completions.create(
                     model=self.model,
@@ -193,26 +222,38 @@ class MDChunkProcessor:
                     max_tokens=self.summary_max_tokens
                 )
                 summary = response.choices[0].message.content.strip()
+
+                # 成功后等待10秒，避免连续请求
+                print(f"  ✓ 摘要生成成功，等待10秒...")
+                time.sleep(10)
                 return summary
 
             except Exception as e:
-                print(f"  ⚠ API 调用失败 (尝试 {attempt + 1}/{max_retries}): {e}")
-                if attempt < max_retries - 1:
-                    continue
-                else:
-                    return f"摘要生成失败: {str(e)}"
+                attempt += 1
+                print(f"  ⚠ API 调用失败 (第 {attempt} 次尝试): {e}")
+                # 指数退避：10秒 → 20秒 → 40秒 → 80秒 ...
+                backoff_time = 10 * (2 ** min(attempt - 1, 5))  # 最多640秒
+                print(f"  等待 {backoff_time} 秒后重试...")
+                time.sleep(backoff_time)
 
     def process_all_files(self):
-        """处理所有文件并生成训练数据"""
+        """
+        处理文件并生成训练数据（增量处理模式）
+
+        - 每次处理最多10个文件
+        - 数据追加到现有json文件
+        - 处理成功后删除原md文件
+        - 失败时无限重试，不丢数据
+        """
         print(f"{'='*60}")
-        print(f"开始处理 Markdown 文件")
+        print(f"开始处理 Markdown 文件（增量模式）")
         print(f"输入目录: {self.input_dir}")
         print(f"输出目录: {self.output_dir}")
         print(f"API 地址: {self.api_base}")
         print(f"模型: {self.model}")
         print(f"{'='*60}\n")
 
-        # 读取所有 MD 文件
+        # 读取一批 MD 文件（最多10个）
         chunks_data = self.read_md_files()
         if not chunks_data:
             print("没有可处理的文件")
@@ -226,46 +267,87 @@ class MDChunkProcessor:
             chunk['summary'] = summary
             print(f"  摘要: {summary[:100]}...\n")
 
-        # 生成不同格式的训练数据
+        # 生成不同格式的训练数据（追加模式）
         self._save_datasets(chunks_data)
 
+        # 删除已处理的 md 文件
+        print(f"\n删除已处理的 md 文件...")
+        for chunk in chunks_data:
+            try:
+                md_path = Path(chunk['filePath'])
+                if md_path.exists():
+                    md_path.unlink()
+                    print(f"  ✓ 已删除: {chunk['fileName']}")
+            except Exception as e:
+                print(f"  ✗ 删除失败 {chunk['fileName']}: {e}")
+
+        print(f"\n{'='*60}")
+        print(f"本批次处理完成！剩余文件可重新运行程序继续处理")
+        print(f"{'='*60}")
+
     def _save_datasets(self, chunks_data: List[Dict]):
-        """保存不同格式的数据集"""
+        """
+        保存不同格式的数据集（追加模式）
+
+        - 如果json文件已存在，读取并追加新数据
+        - jsonl文件直接追加
+        """
+        # 获取当前最大ID（用于继续编号）
+        def get_max_id(json_path):
+            if json_path.exists():
+                try:
+                    with open(json_path, 'r', encoding='utf-8') as f:
+                        existing_data = json.load(f)
+                        if existing_data:
+                            return max(item.get('id', 0) for item in existing_data)
+                except Exception:
+                    pass
+            return 0
 
         # 1. 组合格式 (summary + content)
-        combined_dataset = []
+        combined_path = self.output_dir / "combined_dataset.json"
+        existing_combined = []
+        if combined_path.exists():
+            with open(combined_path, 'r', encoding='utf-8') as f:
+                existing_combined = json.load(f)
+        start_id = get_max_id(combined_path) + 1
+
         for idx, chunk in enumerate(chunks_data):
             combined_text = f"{chunk['summary']}\n\n{chunk['content']}"
-            combined_dataset.append({
-                "id": idx + 1,
+            existing_combined.append({
+                "id": start_id + idx,
                 "text": combined_text,
                 "fileName": chunk['fileName']
             })
 
-        combined_path = self.output_dir / "combined_dataset.json"
         with open(combined_path, 'w', encoding='utf-8') as f:
-            json.dump(combined_dataset, f, ensure_ascii=False, indent=2)
-        print(f"✓ 已保存组合数据集: {combined_path} ({len(combined_dataset)} 条)")
+            json.dump(existing_combined, f, ensure_ascii=False, indent=2)
+        print(f"✓ 已保存组合数据集: {combined_path} (总计 {len(existing_combined)} 条)")
 
         # 2. 问答格式
-        qa_dataset = []
+        qa_path = self.output_dir / "qa_dataset.json"
+        existing_qa = []
+        if qa_path.exists():
+            with open(qa_path, 'r', encoding='utf-8') as f:
+                existing_qa = json.load(f)
+        start_id = get_max_id(qa_path) + 1
+
         for idx, chunk in enumerate(chunks_data):
-            qa_dataset.append({
-                "id": idx + 1,
+            existing_qa.append({
+                "id": start_id + idx,
                 "question": f"请总结以下内容：\n{chunk['content'][:500]}...",
                 "answer": chunk['summary'],
                 "fileName": chunk['fileName']
             })
 
-        qa_path = self.output_dir / "qa_dataset.json"
         with open(qa_path, 'w', encoding='utf-8') as f:
-            json.dump(qa_dataset, f, ensure_ascii=False, indent=2)
-        print(f"✓ 已保存问答数据集: {qa_path} ({len(qa_dataset)} 条)")
+            json.dump(existing_qa, f, ensure_ascii=False, indent=2)
+        print(f"✓ 已保存问答数据集: {qa_path} (总计 {len(existing_qa)} 条)")
 
-        # 3. 指令微调格式 (JSONL)
+        # 3. 指令微调格式 (JSONL) - 直接追加
         jsonl_path = self.output_dir / "instruction_dataset.jsonl"
-        with open(jsonl_path, 'w', encoding='utf-8') as f:
-            for idx, chunk in enumerate(chunks_data):
+        with open(jsonl_path, 'a', encoding='utf-8') as f:
+            for chunk in chunks_data:
                 sample = {
                     "instruction": "请为以下内容生成摘要。",
                     "input": chunk['content'],
@@ -273,13 +355,25 @@ class MDChunkProcessor:
                     "fileName": chunk['fileName']
                 }
                 f.write(json.dumps(sample, ensure_ascii=False) + '\n')
-        print(f"✓ 已保存指令数据集: {jsonl_path} ({len(chunks_data)} 条)")
+        # 统计jsonl行数
+        jsonl_count = 0
+        if jsonl_path.exists():
+            with open(jsonl_path, 'r', encoding='utf-8') as f:
+                jsonl_count = sum(1 for _ in f)
+        print(f"✓ 已保存指令数据集: {jsonl_path} (总计 {jsonl_count} 条)")
 
         # 4. 原始格式 (包含所有字段)
         raw_path = self.output_dir / "raw_dataset.json"
+        existing_raw = []
+        if raw_path.exists():
+            with open(raw_path, 'r', encoding='utf-8') as f:
+                existing_raw = json.load(f)
+
+        existing_raw.extend(chunks_data)
+
         with open(raw_path, 'w', encoding='utf-8') as f:
-            json.dump(chunks_data, f, ensure_ascii=False, indent=2)
-        print(f"✓ 已保存原始数据集: {raw_path} ({len(chunks_data)} 条)")
+            json.dump(existing_raw, f, ensure_ascii=False, indent=2)
+        print(f"✓ 已保存原始数据集: {raw_path} (总计 {len(existing_raw)} 条)")
 
         # 5. 生成统计信息
         stats = {
