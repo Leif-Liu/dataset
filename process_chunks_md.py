@@ -348,7 +348,7 @@ class MDChunkProcessor:
         for idx, chunk in enumerate(chunks_data):
             existing_qa.append({
                 "id": start_id + idx,
-                "question": f"请总结以下内容：\n{chunk['content'][:500]}...",
+                "question": f"请总结以下内容：\n{chunk['content']}",
                 "answer": chunk['summary'],
                 "fileName": chunk['fileName']
             })
