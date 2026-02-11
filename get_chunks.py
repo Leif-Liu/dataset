@@ -8,7 +8,7 @@ TOTAL_PAGES = 100  # 要遍历的总页数
 CHUNKS_PER_PAGE = 50  # 每页chunk数量
 
 # 创建输出目录
-output_dir = "ragflow_chunks_QA_VCU"
+output_dir = "ragflow_chunks_Glean_VCU"
 if not os.path.exists(output_dir):
     os.makedirs(output_dir)
     print(f"创建输出目录: {output_dir}")
@@ -18,7 +18,7 @@ datasets = rag_object.list_datasets()
 print(f"找到 {len(datasets)} 个数据集")
 
 # 查找指定ID的数据集
-target_dataset_id = "d483981bfb6511f0a535065a3d57bbcc"
+target_dataset_id = "65825a60ffe411f08398ce8499fba1bf"    ##"d483981bfb6511f0a535065a3d57bbcc"
 target_dataset = None
 
 for dataset in datasets:

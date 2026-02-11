@@ -20,8 +20,8 @@ MAX_CONTEXT_LENGTH = 131072   # 模型的最大上下文长度
 SUMMARY_MAX_TOKENS = 512      # 生成摘要的最大 token 长度
 
 # 文件路径配置
-INPUT_DIR = "ragflow_chunks_QA_VCU"
-OUTPUT_DIR = "processed_md_dataset"
+INPUT_DIR = "ragflow_chunks_Glean_VCU"
+OUTPUT_DIR = "processed_md_dataset_Glean_VCU"
 
 # 文本分块配置
 CHUNK_SIZE = 130000    # 单个分块的最大字符数
@@ -88,7 +88,7 @@ class MDChunkProcessor:
         Returns:
             文件数据列表
         """
-        md_files = list(self.input_dir.glob("*.md"))
+        md_files = list[Path](self.input_dir.glob("*.md"))
         if not md_files:
             print(f"警告: 在 {self.input_dir} 中未找到 .md 文件")
             return []
